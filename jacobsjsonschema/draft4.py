@@ -237,8 +237,9 @@ class Validator(object):
             return self._report_validation_error("Length of '{}' is more than maximum {}".format(len(data), length), data, length)
         return True
 
-    @staticmethod
-    def _validate_pattern(data:str, pattern:str) -> bool:
+    def _validate_pattern(self, data:str, pattern:str) -> bool:
+        if not re.match(pattern, data):
+            return self._report_validation_error("The string '{}' did not match the pattern '{}'".format(data, pattern), data, pattern)
         return True
 
     def _validate_format(self, data:str, format:str) -> bool:
@@ -249,21 +250,30 @@ class Validator(object):
     def _is_format_datetime(self, data:str) -> bool:
         return True
 
-    @staticmethod
-    def _validate_maximum(data:Union[float,int], value:int) -> bool:
+    def _validate_maximum(self, data:Union[float,int], value:int) -> bool:
+        if data > value:
+            return self._report_validation_error("The value {} is greater than the maximum {}".format(data, value), data, value)
         return True
 
-    @staticmethod
-    def _validate_minimum(data:Union[float,int], value:int) -> bool:
+    def _validate_minimum(self, data:Union[float,int], value:int) -> bool:
+        if data < value:
+            return self._report_validation_error("The value {} is less than the minimum {}".format(data, value), data, value)
         return True
 
     def _validate_items(self, data:list, schema:dict) -> bool:
-        return True
+        retval = True
+        for item in data:
+            retval = retval and self.validate(item, schema)
+        return retval
 
     def _validate_maxitems(self, data:list, maximum:int) -> bool:
+        if len(data) > maximum:
+            return self._report_validation_error("There were more items {} than the maximum {}".format(len(data), maximum), data, maximum)
         return True
 
     def _validate_minitems(self, data:list, minimum:int) -> bool:
+        if len(data) < minimum:
+            return self._report_validation_error("There were fewer items {} than the minimum {}".format(len(data), minimum), data, minimum)
         return True
 
     def validate(self, data:JsonTypes, schema:Optional[dict]=None) -> bool:
