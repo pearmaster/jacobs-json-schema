@@ -296,7 +296,8 @@ class Validator(object):
 
 def test_validate():
     data = {
-        "foo": "bar"
+        "foo": "bar",
+        "bar": 10,
     }
     schema = {
         "type": "object",
@@ -306,7 +307,14 @@ def test_validate():
                 "enum": [
                     "bar",
                     "fred",
-                ]
+                ],
+                "maxLength": 10,
+                "minLength": 1,
+            },
+            "bar": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10
             }
         },
         "required": ["foo"],
@@ -321,8 +329,11 @@ def test_validate():
             {"type": "object"},
         ]
     }
-    validator = Validator(schema)
+    validator = Validator(schema, _lazy_error_reporting=True)
     assert(validator.validate(data))
+    if len(validator.get_errors()) > 0:
+        for err in validator.get_errors():
+            print(err)
 
 if __name__ == '__main__':
     test_validate()
