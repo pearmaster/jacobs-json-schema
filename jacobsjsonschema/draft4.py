@@ -1,6 +1,8 @@
 
 from typing import Union, List, Dict, Optional, Callable
 
+import re
+
 class JsonSchemaValidationError(Exception):
     pass
 
@@ -114,11 +116,35 @@ class Validator(object):
                 self.validate(v, schema[k])
         return True
 
-    def _validate_pattern_properties(self, data:dict, schema:Dict[str,dict]) -> bool:
-        return True
+    def _validate_pattern_properties(self, data:Dict[str,JsonTypes], schema:Dict[str,dict]) -> bool:
+        if not isinstance(data, dict):
+            return self._report_validation_error("patternProperties will only validate against an object", data, schema)
+        if not isinstance(schema, dict):
+            raise InvalidSchemaError("patternProperties must be an object")
+        retval = True
+        for regex_expression, subschema in schema.items():
+            pattern = re.compile(regex_expression)
+            for k, v in data.items():
+                if pattern.match(k):
+                    retval = retval and self.validate(v, subschema)
+        return retval
 
     def _validate_additional_properties(self, data:dict, additional:bool, property_keys:Optional[List[str]]=None, property_patterns:Optional[List[str]]=None) -> bool:
-        return True
+        if not isinstance(data, dict):
+            return self._report_validation_error("additionalProperties will only validate against an object", data, additional)
+        retval = True
+        if additional is False:
+            for propname in data.keys():
+                found_somewhere = False
+                if property_keys is not None and propname in property_keys:
+                    found_somewhere = True
+                if property_patterns is not None:
+                    for regex_expression in property_patterns:
+                        if re.match(regex_expression, propname):
+                            found_somewhere = True
+                if not found_somewhere:
+                    retval = retval and self._report_validation_error("The property '{}' is an additional property which is not allowed".format(propname), data, additional)
+        return retval
 
     def _validate_required(self, data:dict, schema:List[str]) -> bool:
         if not isinstance(data, dict):
