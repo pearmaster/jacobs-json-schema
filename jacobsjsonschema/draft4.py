@@ -38,6 +38,7 @@ class Validator(object):
         }
         self._root_schema = schema
         self._file_loader = None
+        self._temp_ignore_errors = False
         self._lazy_error_reporting = _lazy_error_reporting
         self._errors = []
 
@@ -79,7 +80,8 @@ class Validator(object):
             message = "{} (schema line {})".format(message, schema.line)
         if not self._lazy_error_reporting:
             raise JsonSchemaValidationError(message)
-        self._errors.append(message)
+        if not self._temp_ignore_errors:
+            self._errors.append(message)
         return False
 
     def _validate_type_integer(self, data:int, schema_type) -> bool:
@@ -163,15 +165,18 @@ class Validator(object):
             raise InvalidSchemaError("AnyOf schema was not a list")
         for schema in schemas:
             try:
-                self.validate(data, schema)
+                self._temp_ignore_errors = True
+                if self.validate(data, schema):
+                    self._temp_ignore_errors = False
+                    return True
             except InvalidSchemaError:
                 raise
             except JsonSchemaValidationError:
                 pass
             except Exception:
                 raise
-            else:
-                return True
+            finally:
+                self._temp_ignore_errors = False
         return self._report_validation_error("The JSON data did not match any of the provided anyOf schemas", data, schemas)
 
     def _validate_oneof(self, data:JsonTypes, schemas:list) -> bool:
@@ -180,15 +185,17 @@ class Validator(object):
         valid_count = 0
         for schema in schemas:
             try:
-                self.validate(data, schema)
+                self._temp_ignore_errors = True
+                if self.validate(data, schema):
+                    valid_count += 1
             except InvalidSchemaError:
                 raise
             except JsonSchemaValidationError:
                 pass
             except Exception:
                 raise
-            else:
-                valid_count += 1
+            finally:
+                self._temp_ignore_errors = False
         if valid_count != 1:
             return self._report_validation_error("The data matched against {} schemas but was required to match exactly 1".format(valid_count), data, schemas)
         return True
@@ -202,14 +209,19 @@ class Validator(object):
 
     def _validate_not(self, data:JsonTypes, schema:dict) -> bool:
         try:
-            self.validate(data, schema)
+            self._temp_ignore_errors = True
+            if not self.validate(data, schema):
+                self._temp_ignore_errors = False
+                return True
         except InvalidSchemaError:
             raise
         except JsonSchemaValidationError:
+            self._temp_ignore_errors = False
             return True
         except Exception:
             raise
         else:
+            self._temp_ignore_errors = False
             return self._report_validation_error("The data matched against the schema when it was not supposed to", data, schema)
 
     def _validate_enum(self, data:JsonTypes, schema:List[JsonTypes]) -> bool:
@@ -279,20 +291,20 @@ class Validator(object):
     def validate(self, data:JsonTypes, schema:Optional[dict]=None) -> bool:
         if schema is None:
             schema = self._root_schema
+        retval = True
         if '$ref' in schema:
-            return self.validate_from_reference(data, schema['$ref'])
+            retval = self.validate_from_reference(data, schema['$ref']) and retval
         for k, validator_func in self.validators.items():
             if k in schema:
-                validator_func(data, schema[k])
+                retval = validator_func(data, schema[k]) and retval
         if 'additionalProperties' in schema:
             if isinstance(data, dict):
                 property_keys = schema['properties'].keys() if 'properties' in schema else None
                 property_patterns = schema['patternProperties'].keys() if 'patternProperties' in schema else None
-                self._validate_additional_properties(data, schema['additionalProperties'], property_keys, property_patterns)
+                retval = self._validate_additional_properties(data, schema['additionalProperties'], property_keys, property_patterns) and retval
             else:
-                self._report_validation_error("Use of additionalProperties to validate a non-object", data, schema['additionalProperties'])
-
-        return True
+                retval = self._report_validation_error("Use of additionalProperties to validate a non-object", data, schema['additionalProperties'])
+        return retval
 
 def test_validate():
     data = {
@@ -327,10 +339,12 @@ def test_validate():
         "oneOf": [
             {"type": "string"},
             {"type": "object"},
-        ]
+        ],
+        "not": {"type": "integer"},
     }
     validator = Validator(schema, _lazy_error_reporting=True)
-    assert(validator.validate(data))
+    if not validator.validate(data):
+        print("Did not validate")
     if len(validator.get_errors()) > 0:
         for err in validator.get_errors():
             print(err)
