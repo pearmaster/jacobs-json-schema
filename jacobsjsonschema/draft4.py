@@ -272,10 +272,18 @@ class Validator(object):
             return self._report_validation_error("The value {} is less than the minimum {}".format(data, value), data, value)
         return True
 
-    def _validate_items(self, data:list, schema:dict) -> bool:
+    def _validate_prefixitems(self, data:list, schema:list) -> bool:
         retval = True
+        for idx, item in enumerate(data):
+            retval = self.validate(item, schema[idx]) and retval
+        return retval
+
+    def _validate_items(self, data:list, schema:Union[list, dict]) -> bool:
+        retval = True
+        if isinstance(schema, list):
+            return self._validate_prefixitems(data, schema)
         for item in data:
-            retval = retval and self.validate(item, schema)
+            retval = self.validate(item, schema) and retval
         return retval
 
     def _validate_maxitems(self, data:list, maximum:int) -> bool:
