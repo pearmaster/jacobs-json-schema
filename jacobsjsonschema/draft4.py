@@ -33,6 +33,7 @@ class Validator(object):
         self.array_validators = {
             "items": self._validate_items,
             "maxItems": self._validate_maxitems,
+            "uniqueItems": self._validate_uniqueitems,
         }
         self.object_validators = {
             "properties": self._validate_properties,
@@ -300,6 +301,15 @@ class Validator(object):
     def _validate_minitems(self, data:list, minimum:int) -> bool:
         if len(data) < minimum:
             return self._report_validation_error("There were fewer items {} than the minimum {}".format(len(data), minimum), data, minimum)
+        return True
+
+    def _validate_uniqueitems(self, data:list, uniqueness:bool) -> bool:
+        if uniqueness is False:
+            return True
+        num_items = len(data)
+        unique_items = len(set(data))
+        if num_items != unique_items:
+            return self._report_validation_error("There were {} items which were not unique".format(num_items-unique_items), data, uniqueness)
         return True
 
     def _array_validate(self, data:list, schema:dict) -> bool:
