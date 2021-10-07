@@ -7,7 +7,7 @@ class Validator(Draft201909Validator):
 
     def __init__(self, schema:dict, lazy_error_reporting:bool=False):
         super().__init__(schema, lazy_error_reporting)
-        self.validators['prefixItems'] = self._validate_prefixitems
+        self.array_validators['prefixItems'] = self._validate_prefixitems
 
     def _validate_items(self, data:list, schema:dict) -> bool:
         retval = True

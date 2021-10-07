@@ -14,24 +14,30 @@ JsonTypes = Union[str,dict,list,int,float,None]
 class Validator(object):
 
     def __init__(self, schema:dict, _lazy_error_reporting=False):
-        self.validators = {
+        self.generic_validators = {
             "type": self._validate_type,
-            "properties": self._validate_properties,
-            "patternProperties": self._validate_pattern_properties,
-            "required": self._validate_required,
             "anyOf": self._validate_anyof,
             "allOf": self._validate_allof,
             "oneOf": self._validate_oneof,
             "not": self._validate_not,
+        }
+        self.value_validators = {
             "enum": self._validate_enum,
             "minLength": self._validate_minlength,
             "maxLength": self._validate_maxlength,
             "pattern": self._validate_pattern,
             "minimum": self._validate_minimum,
             "maximum": self._validate_maximum,
+            "format": self._validate_format,
+        }
+        self.array_validators = {
             "items": self._validate_items,
             "maxItems": self._validate_maxitems,
-            "format": self._validate_format,
+        }
+        self.object_validators = {
+            "properties": self._validate_properties,
+            "patternProperties": self._validate_pattern_properties,
+            "required": self._validate_required,
         }
         self._format_validators = {
             'date-time': self._is_format_datetime
@@ -296,13 +302,16 @@ class Validator(object):
             return self._report_validation_error("There were fewer items {} than the minimum {}".format(len(data), minimum), data, minimum)
         return True
 
-    def validate(self, data:JsonTypes, schema:Optional[dict]=None) -> bool:
-        if schema is None:
-            schema = self._root_schema
+    def _array_validate(self, data:list, schema:dict) -> bool:
         retval = True
-        if '$ref' in schema:
-            retval = self.validate_from_reference(data, schema['$ref']) and retval
-        for k, validator_func in self.validators.items():
+        for k, validator_func in self.array_validators.items():
+            if k in schema:
+                retval = validator_func(data, schema[k]) and retval
+        return retval
+
+    def _object_validate(self, data:dict, schema:dict) -> bool:
+        retval = True
+        for k, validator_func in self.object_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
         if 'additionalProperties' in schema:
@@ -313,6 +322,33 @@ class Validator(object):
             else:
                 retval = self._report_validation_error("Use of additionalProperties to validate a non-object", data, schema['additionalProperties'])
         return retval
+
+    def _value_validate(self, data:Union[int,float,str,None], schema:dict) -> bool:
+        retval = True
+        for k, validator_func in self.value_validators.items():
+            if k in schema:
+                retval = validator_func(data, schema[k]) and retval
+        return retval
+
+    def _validate(self, data:JsonTypes, schema:dict) -> bool:
+        retval = True
+        if '$ref' in schema:
+            retval = self.validate_from_reference(data, schema['$ref']) and retval
+        for k, validator_func in self.generic_validators.items():
+            if k in schema:
+                retval = validator_func(data, schema[k]) and retval
+        if isinstance(data, list):
+            retval = self._array_validate(data, schema) and retval
+        elif isinstance(data, dict):
+            retval = self._object_validate(data, schema) and retval
+        else:
+            retval = self._value_validate(data, schema) and retval
+        return retval
+
+    def validate(self, data:JsonTypes, schema:Optional[dict]=None) -> bool:
+        if schema is None:
+            schema = self._root_schema
+        return self._validate(data, schema)
 
 def test_validate():
     data = {

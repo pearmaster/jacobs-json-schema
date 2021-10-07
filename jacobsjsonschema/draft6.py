@@ -8,8 +8,8 @@ class Validator(Draft4Validator):
 
     def __init__(self, schema:dict, lazy_error_reporting:bool=False):
         super().__init__(schema, lazy_error_reporting)
-        self.validators["const"] = self._validate_const
-        self.validators["contains"] = self._validate_contains
+        self.value_validators["const"] = self._validate_const
+        self.array_validators["contains"] = self._validate_contains
     
     def _validate_type_integer(self, data:Union[int, float], schema_type) -> bool:
         if isinstance(data, float):
@@ -46,11 +46,14 @@ class Validator(Draft4Validator):
             return self._report_validation_error("There weren't any occurances in the array", data, schema)
         return True
 
-    def validate(self, data:JsonTypes, schema:Optional[dict]=None) -> bool:
-        if schema is None:
-            schema = self._root_schema
+    def _validate(self, data:JsonTypes, schema:Union[dict,bool]) -> bool:
         if schema is True:
             return True
         if schema is False:
             return self._report_validation_error("False schema always fails validation", data, schema)
-        return super().validate(data, schema)
+        return super()._validate(data, schema)
+
+    def validate(self, data:JsonTypes, schema:Union[dict,bool,None]=None) -> bool:
+        if schema is None:
+            schema = self._root_schema
+        return self._validate(data, schema)

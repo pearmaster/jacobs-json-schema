@@ -8,7 +8,7 @@ class Validator(Draft7Validator):
 
     def __init__(self, schema:dict, lazy_error_reporting:bool=False):
         super().__init__(schema, lazy_error_reporting)
-        del self.validators['contains']
+        del self.array_validators['contains']
         self._warnings = []
     
     def get_warnings(self):
@@ -41,10 +41,8 @@ class Validator(Draft7Validator):
             retval = self._report_validation_error("There were too many occurances {} in array that matched schema".format(occurances), data, max_contains) and retval
         return retval
 
-    def validate(self, data:JsonTypes, schema:Optional[dict]=None) -> bool:
-        if schema is None:
-            schema = self._root_schema
-        retval = super().validate(data, schema)
+    def _array_validate(self, data:list, schema:dict) -> bool:
+        retval = super()._array_validate(data, schema)
         if 'contains' in schema:
             if not isinstance(data, list):
                 self._report_validation_error("Cannot evaluate a 'contains' against a non-array", data, schema)
