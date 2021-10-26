@@ -360,48 +360,7 @@ class Validator(object):
             schema = self._root_schema
         return self._validate(data, schema)
 
-def test_validate():
-    data = {
-        "foo": "bar",
-        "bar": 10,
-    }
-    schema = {
-        "type": "object",
-        "properties": {
-            "foo": {
-                "type": "string",
-                "enum": [
-                    "bar",
-                    "fred",
-                ],
-                "maxLength": 10,
-                "minLength": 1,
-            },
-            "bar": {
-                "type": "integer",
-                "minimum": 1,
-                "maximum": 10
-            }
-        },
-        "required": ["foo"],
-        "anyOf": [
-            {"type": "object"}
-        ],
-        "allOf": [
-            {"type": "object"}
-        ],
-        "oneOf": [
-            {"type": "string"},
-            {"type": "object"},
-        ],
-        "not": {"type": "integer"},
-    }
-    validator = Validator(schema, _lazy_error_reporting=True)
-    if not validator.validate(data):
-        print("Did not validate")
-    if len(validator.get_errors()) > 0:
-        for err in validator.get_errors():
-            print(err)
+
 
 if __name__ == '__main__':
     test_validate()
