@@ -92,7 +92,7 @@ class Validator(object):
         return False
 
     def _validate_type_integer(self, data:int, schema_type) -> bool:
-        if not isinstance(data, int):
+        if isinstance(data, bool) or not isinstance(data, int):
             return self._report_validation_error("The value '{}' is not an integer", data, schema_type)
         return True
 
@@ -117,7 +117,7 @@ class Validator(object):
             if data is not None:
                 return self._report_validation_error("Data type was not null", data, schema_type)
         elif schema_type == 'number':
-            if not isinstance(data, int) and not isinstance(data, float):
+            if isinstance(data, bool) or (not isinstance(data, int) and not isinstance(data, float)):
                 return self._report_validation_error("Data was not a number", data, schema_type)
             else:
                 return True
