@@ -60,11 +60,9 @@ class Validator(object):
 
     def walk_schema_from_root(self, path:str) -> dict:
         parts = path.split('/')
-        if parts[0] != '#':
-            raise InvalidSchemaError("$ref '{}' could not be handled because it didn't start with '#'".format(path))
         node = self._root_schema
         for part in parts[1:]:
-            node = self._root_schema[part]
+            node = node[part]
         return node
 
     def validate_from_reference(self, data, dollar_ref):
