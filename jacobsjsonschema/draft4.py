@@ -29,6 +29,7 @@ class Validator(object):
             "maxLength": self._validate_maxlength,
             "pattern": self._validate_pattern,
             "format": self._validate_format,
+            "multipleOf": self._validate_multipleof,
         }
         self.array_validators = {
             "maxItems": self._validate_maxitems,
@@ -294,6 +295,8 @@ class Validator(object):
         return True
 
     def _validate_pattern(self, data:str, pattern:str) -> bool:
+        if not isinstance(data, str):
+            return True
         if not re.match(pattern, data):
             return self._report_validation_error("The string '{}' did not match the pattern '{}'".format(data, pattern), data, pattern)
         return True
@@ -320,6 +323,11 @@ class Validator(object):
             return True
         if (data < value) or (data == value and exclusive is True):
             return self._report_validation_error("The value {} is less than the minimum {}".format(data, value), data, value)
+        return True
+
+    def _validate_multipleof(self, data:Union[float,int], value:Union[float,int]) -> bool:
+        if (data % value) != 0:
+            return self._report_validation_error("The value {} is not a multiple of {}".format(data, value), data, value)
         return True
 
     def _validate_prefixitems(self, data:list, schema:list) -> bool:
