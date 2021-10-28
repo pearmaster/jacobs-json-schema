@@ -9,6 +9,13 @@ class Validator(Draft7Validator):
     def __init__(self, schema:dict, lazy_error_reporting:bool=False):
         super().__init__(schema, lazy_error_reporting)
         del self.array_validators['contains']
+
+        del self.object_validators['dependencies']
+        self.object_validators.extend({
+            "dependentRequired": self._validate_dependency,
+            "dependentSchemas": self._validate_dependency,
+        })
+        
         self._warnings = []
     
     def get_warnings(self):
