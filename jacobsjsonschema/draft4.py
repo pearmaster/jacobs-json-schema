@@ -250,7 +250,8 @@ class Validator(object):
         if not isinstance(length, int):
             raise InvalidSchemaError("The minLength value must be an integer")
         if not isinstance(data, str):
-            return self._report_validation_error("The data for minLength was not a string", data, length)
+            #minLength ignores non-strings per spec
+            return True
         if len(data) < length:
             return self._report_validation_error("The data length {} was less than the minimum {}".format(len(data), length), data, length)
         return True
@@ -287,6 +288,9 @@ class Validator(object):
         return True
 
     def _validate_minimum(self, data:Union[float,int], value:int, exclusive=False) -> bool:
+        if not isinstance(data, float) and not isinstance(data, int):
+            # Per spec, ignore non-numbers
+            return True
         if (data < value) or (data == value and exclusive is True):
             return self._report_validation_error("The value {} is less than the minimum {}".format(data, value), data, value)
         return True

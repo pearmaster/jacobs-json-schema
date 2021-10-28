@@ -19,15 +19,17 @@ def pytest_generate_tests(metafunc):
     argvalues = []
     testids = []
 
-    for testfile in ["additionalItems.json", "enum.json", "items.json", "maximum.json", "maxItems.json", "maxLength.json"]:
-        test_filepath = os.path.join(testsuite_dir, "tests", "draft4", testfile)
+    testfile_dir = testsuite_dir / "tests" / "draft4"
+
+    for testfile in testfile_dir.glob("*.json"):
+        test_filepath = os.path.join(testfile_dir, testfile)
         with open(test_filepath, "r") as test_file:
             test_cases = json.load(test_file)
 
         for test_case in test_cases:
             
             for test in test_case['tests']:
-                testids.append(f"draft4 -> {testfile} -> {test_case['description']} -> {test['description']}")
+                testids.append(f"draft4 -> {os.path.basename(testfile)} -> {test_case['description']} -> {test['description']}")
                 argvalues.append(pytest.param(test_case['schema'], test['data'], test['valid']))
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
