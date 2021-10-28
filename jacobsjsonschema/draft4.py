@@ -42,6 +42,7 @@ class Validator(object):
             "required": self._validate_required,
             "minProperties": self._validate_minproperties,
             "maxProperties": self._validate_maxproperties,
+            "dependencies": self._validate_dependency,
         }
         self._format_validators = {
             'date-time': self._is_format_datetime
@@ -194,6 +195,18 @@ class Validator(object):
             if item not in data:
                 return self._report_validation_error("The '{}' property is required but was missing".format(item), data, schema)
         return True
+
+    def _validate_dependency(self, data:dict, required:Dict[str,Union[list,dict]]) -> bool:
+        retval = True
+        for requirement, consequence in required.items():
+            if requirement in data:
+                if isinstance(consequence, list):
+                    retval = self._validate_required(data, consequence) and retval
+                elif isinstance(consequence, dict):
+                    retval = self.validate(data, consequence) and retval
+                else:
+                    return InvalidSchemaError("Dependency must be either a list or a schema")
+        return retval
 
     def _validate_anyof(self, data:JsonTypes, schemas:list) -> bool:
         if not isinstance(schemas, list):
