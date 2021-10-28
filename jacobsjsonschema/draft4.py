@@ -20,9 +20,9 @@ class Validator(object):
             "allOf": self._validate_allof,
             "oneOf": self._validate_oneof,
             "not": self._validate_not,
+            "enum": self._validate_enum,
         }
         self.value_validators = {
-            "enum": self._validate_enum,
             "minLength": self._validate_minlength,
             "maxLength": self._validate_maxlength,
             "pattern": self._validate_pattern,
@@ -235,6 +235,14 @@ class Validator(object):
         if not isinstance(schema, list):
             raise InvalidSchemaError("The enum restriction must be a list of values")
         if data not in schema:
+            return self._report_validation_error("The value '{}' was not in the enumerated list of allowed values".format(data), data, schema)
+        if data in [False, True, 0, 1]:
+            datatype = type(data)
+            for x in schema:
+                if data == x and type(x) == datatype:
+                    return True
+                if datatype in [int, float] and type(x) in [int, float]:
+                    return True
             return self._report_validation_error("The value '{}' was not in the enumerated list of allowed values".format(data), data, schema)
         return True
 
