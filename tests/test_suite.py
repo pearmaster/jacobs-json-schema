@@ -19,7 +19,7 @@ def pytest_generate_tests(metafunc):
     argvalues = []
     testids = []
 
-    for testfile in ["enum.json", "items.json"]:
+    for testfile in ["additionalItems.json", "enum.json", "items.json", "maximum.json", "maxItems.json", "maxLength.json"]:
         test_filepath = os.path.join(testsuite_dir, "tests", "draft4", testfile)
         with open(test_filepath, "r") as test_file:
             test_cases = json.load(test_file)

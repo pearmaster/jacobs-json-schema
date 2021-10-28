@@ -26,13 +26,11 @@ class Validator(object):
             "minLength": self._validate_minlength,
             "maxLength": self._validate_maxlength,
             "pattern": self._validate_pattern,
-            "minimum": self._validate_minimum,
-            "maximum": self._validate_maximum,
             "format": self._validate_format,
         }
         self.array_validators = {
-            "items": self._validate_items,
             "maxItems": self._validate_maxitems,
+            "minItems": self._validate_minitems,
             "uniqueItems": self._validate_uniqueitems,
         }
         self.object_validators = {
@@ -98,7 +96,8 @@ class Validator(object):
         mapping = {
             "string": str,
             "array": list,
-            "object": dict
+            "object": dict,
+            "boolean": bool,
         }
         if schema_type == 'integer':
             return self._validate_type_integer(data, schema_type)
@@ -260,7 +259,8 @@ class Validator(object):
         if not isinstance(length, int):
             raise InvalidSchemaError("The maxLength value must be an integer")
         if not isinstance(data, str):
-            return self._report_validation_error("Cannot determine length of non-string '{}'".format(data), data, length)
+            # MaxLength ignores non-strings per spec
+            return True
         if len(data) > length:
             return self._report_validation_error("Length of '{}' is more than maximum {}".format(len(data), length), data, length)
         return True
@@ -278,26 +278,40 @@ class Validator(object):
     def _is_format_datetime(self, data:str) -> bool:
         return True
 
-    def _validate_maximum(self, data:Union[float,int], value:int) -> bool:
-        if data > value:
+    def _validate_maximum(self, data:Union[float,int], value:int, exclusive=False) -> bool:
+        if not isinstance(data, float) and not isinstance(data, int):
+            # Per spec, ignore non-numbers
+            return True
+        if (data > value) or (data == value and exclusive is True):
             return self._report_validation_error("The value {} is greater than the maximum {}".format(data, value), data, value)
         return True
 
-    def _validate_minimum(self, data:Union[float,int], value:int) -> bool:
-        if data < value:
+    def _validate_minimum(self, data:Union[float,int], value:int, exclusive=False) -> bool:
+        if (data < value) or (data == value and exclusive is True):
             return self._report_validation_error("The value {} is less than the minimum {}".format(data, value), data, value)
         return True
 
     def _validate_prefixitems(self, data:list, schema:list) -> bool:
         retval = True
-        for idx, item in enumerate(data[:len(schema)]):
+        for idx, item in enumerate(data):
             retval = self.validate(item, schema[idx]) and retval
         return retval
 
-    def _validate_items(self, data:list, schema:Union[list, dict]) -> bool:
+    def _validate_items(self, data:list, schema:Union[list, dict], additionalItems=True) -> bool:
         retval = True
         if isinstance(schema, list):
-            return self._validate_prefixitems(data, schema)
+            data_len = len(data)
+            schema_len = len(schema)
+            if data_len <= schema_len:
+                return self._validate_prefixitems(data[:schema_len], schema)
+            else:
+                if additionalItems:
+                    retval = self._validate_prefixitems(data[:schema_len], schema)
+                    for item in data[schema_len:]:
+                        retval = (additionalItems is True) or self.validate(item, additionalItems)
+                    return retval
+                else:
+                    return self._report_validation_error("There are too many items when additional items is false", data, schema)
         for item in data:
             retval = self.validate(item, schema) and retval
         return retval
@@ -323,6 +337,9 @@ class Validator(object):
 
     def _array_validate(self, data:list, schema:dict) -> bool:
         retval = True
+        additionalItems = schema['additionalItems'] if 'additionalItems' in schema else True
+        if 'items' in schema:
+            retvat = self._validate_items(data, schema['items'], additionalItems)
         for k, validator_func in self.array_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
@@ -344,6 +361,12 @@ class Validator(object):
 
     def _value_validate(self, data:Union[int,float,str,None], schema:dict) -> bool:
         retval = True
+        if 'maximum' in schema:
+            exclusive = schema['exclusiveMaximum'] if 'exclusiveMaximum' in schema else False
+            retval = self._validate_maximum(data, schema['maximum'], exclusive=exclusive)
+        if 'minimum' in schema:
+            exclusive = schema['exclusiveMinimum'] if 'exclusiveMinimum' in schema else False
+            retval = self._validate_minimum(data, schema['minimum'], exclusive=exclusive)
         for k, validator_func in self.value_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
