@@ -326,7 +326,15 @@ class Validator(object):
         return True
 
     def _validate_multipleof(self, data:Union[float,int], value:Union[float,int]) -> bool:
-        if (data % value) != 0:
+        if not isinstance(data, float) and not isinstance(data, int):
+            return True
+        remainder = (data % value)
+        if remainder != 0:
+            # Handle float imprecision
+            if isinstance(value, float) and value < 1.0:
+                multiplier = int(1.0/value)
+                if ((multiplier*data) % (multiplier*value)) == 0:
+                    return True
             return self._report_validation_error("The value {} is not a multiple of {}".format(data, value), data, value)
         return True
 
