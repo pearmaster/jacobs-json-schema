@@ -106,8 +106,11 @@ class Validator(object):
             return self._validate_type_integer(data, schema_type)
         elif schema_type == 'null' and data is not None:
             return self._report_validation_error("Data type was not null", data, schema_type)
-        elif schema_type == 'number' and (not isinstance(data, int) and not isinstance(data, float)):
-            return self._report_validation_error("Data was not a number", data, schema_type)
+        elif schema_type == 'number':
+            if not isinstance(data, int) and not isinstance(data, float):
+                return self._report_validation_error("Data was not a number", data, schema_type)
+            else:
+                return True
         elif schema_type in mapping:
             if not isinstance(data, mapping[schema_type]):
                 return self._report_validation_error("Data was not a {}".format(schema_type), data, schema_type)
@@ -289,7 +292,7 @@ class Validator(object):
 
     def _validate_prefixitems(self, data:list, schema:list) -> bool:
         retval = True
-        for idx, item in enumerate(data):
+        for idx, item in enumerate(data[:len(schema)]):
             retval = self.validate(item, schema[idx]) and retval
         return retval
 
