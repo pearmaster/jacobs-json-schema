@@ -3,6 +3,8 @@ from typing import Union, List, Dict, Optional, Callable
 
 import re
 
+from .bool_compare_util import replace_bools_for_comparison
+
 class JsonSchemaValidationError(Exception):
     pass
 
@@ -37,6 +39,8 @@ class Validator(object):
             "properties": self._validate_properties,
             "patternProperties": self._validate_pattern_properties,
             "required": self._validate_required,
+            "minProperties": self._validate_minproperties,
+            "maxProperties": self._validate_maxproperties,
         }
         self._format_validators = {
             'date-time': self._is_format_datetime
@@ -92,7 +96,15 @@ class Validator(object):
             return self._report_validation_error("The value '{}' is not an integer", data, schema_type)
         return True
 
-    def _validate_type(self, data:JsonTypes, schema_type:str) -> bool:
+    def _validate_type(self, data:JsonTypes, schema_type:Union[str,list]) -> bool:
+        if isinstance(schema_type, list):
+            for st in schema_type:
+                try:
+                    if self._validate_type(data, st):
+                        return True
+                except JsonSchemaValidationError:
+                    pass
+            return self._report_validation_error("Data was not a {}".format(" or ".join(schema_type)), data, schema_type)
         mapping = {
             "string": str,
             "array": list,
@@ -101,8 +113,9 @@ class Validator(object):
         }
         if schema_type == 'integer':
             return self._validate_type_integer(data, schema_type)
-        elif schema_type == 'null' and data is not None:
-            return self._report_validation_error("Data type was not null", data, schema_type)
+        elif schema_type == 'null':
+            if data is not None:
+                return self._report_validation_error("Data type was not null", data, schema_type)
         elif schema_type == 'number':
             if not isinstance(data, int) and not isinstance(data, float):
                 return self._report_validation_error("Data was not a number", data, schema_type)
@@ -154,6 +167,18 @@ class Validator(object):
                 if not found_somewhere:
                     retval = retval and self._report_validation_error("The property '{}' is an additional property which is not allowed".format(propname), data, additional)
         return retval
+
+    def _validate_maxproperties(self, data:dict, schema:int) -> bool:
+        num_props = len(data)
+        if num_props > schema:
+            return self._report_validation_error("There are too many properties {} on the object".format(num_props), data, schema)
+        return True
+
+    def _validate_minproperties(self, data:dict, schema:int) -> bool:
+        num_props = len(data)
+        if num_props < schema:
+            return self._report_validation_error("There are too few properties {} on the object".format(num_props), data, schema)
+        return True
 
     def _validate_required(self, data:dict, schema:List[str]) -> bool:
         if not isinstance(data, dict):
@@ -331,12 +356,30 @@ class Validator(object):
         return True
 
     def _validate_uniqueitems(self, data:list, uniqueness:bool) -> bool:
+        def is_unique(data:list) -> bool:
+            found = []
+            for item in data:
+                fixed_item = replace_bools_for_comparison(item)
+                if fixed_item in found:
+                    return False
+                found.append(fixed_item)
+            return True
+
         if uniqueness is False:
             return True
         num_items = len(data)
-        unique_items = len(set(data))
-        if num_items != unique_items:
-            return self._report_validation_error("There were {} items which were not unique".format(num_items-unique_items), data, uniqueness)
+
+        try:
+            # Easy way
+            unique_items = len(set(data))
+            if num_items == unique_items:
+                return True
+        except TypeError:
+            pass
+
+        if not is_unique(data):
+            return self._report_validation_error("There were items which were not unique", data, uniqueness)
+
         return True
 
     def _array_validate(self, data:list, schema:dict) -> bool:
