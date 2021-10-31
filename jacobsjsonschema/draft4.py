@@ -149,7 +149,7 @@ class Validator(object):
         for regex_expression, subschema in schema.items():
             pattern = re.compile(regex_expression)
             for k, v in data.items():
-                if pattern.match(k):
+                if pattern.search(k):
                     retval = retval and self.validate(v, subschema)
         return retval
 
@@ -164,7 +164,7 @@ class Validator(object):
                     found_somewhere = True
                 if property_patterns is not None:
                     for regex_expression in property_patterns:
-                        if re.match(regex_expression, propname):
+                        if re.search(regex_expression, propname):
                             found_somewhere = True
                 if not found_somewhere:
                     if additional is not False and self.validate(data[propname], additional):
@@ -310,7 +310,7 @@ class Validator(object):
     def _validate_pattern(self, data:str, pattern:str) -> bool:
         if not isinstance(data, str):
             return True
-        if not re.match(pattern, data):
+        if not re.search(pattern, data):
             return self._report_validation_error("The string '{}' did not match the pattern '{}'".format(data, pattern), data, pattern)
         return True
 

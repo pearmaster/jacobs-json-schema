@@ -3,9 +3,11 @@ Uses a bunch of JSON Schema test data to validate a bunch of stuff"""
 
 import pathlib
 import os.path
-import json
 import pytest
 from pprint import pprint
+
+from jacobsjsondoc.loader import PrepopulatedLoader
+from jacobsjsondoc.document import Document
 
 from .context import jacobsjsonschema
 
@@ -26,12 +28,14 @@ def pytest_generate_tests(metafunc):
         if os.path.basename(testfile) in SPECIAL_TESTS:
             continue
         with open(testfile, "r") as test_file:
-            test_cases = json.load(test_file)
+            ppl = PrepopulatedLoader()
+            ppl.prepopulate(os.path.basename(testfile), test_file.read())
+            test_cases = Document(uri=os.path.basename(testfile), resolver=None, loader=ppl)
 
         for test_case in test_cases:
             
             for test in test_case['tests']:
-                testids.append(f"draft4 -> {os.path.basename(testfile)} -> {test_case['description']} -> {test['description']}")
+                testids.append(f"draft4 -> {os.path.basename(testfile)}(doc) -> {test_case['description']} -> {test['description']}")
                 argvalues.append(pytest.param(test_case['schema'], test['data'], test['valid']))
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
