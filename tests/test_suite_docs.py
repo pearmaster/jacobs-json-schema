@@ -22,7 +22,6 @@ def pytest_generate_tests(metafunc):
     argvalues = []
     testids = []
 
-    """
     testfile_dir = testsuite_dir / "tests" / "draft4"
 
     for testfile in testfile_dir.glob("*.json"):
@@ -39,7 +38,6 @@ def pytest_generate_tests(metafunc):
             for test in test_case['tests']:
                 testids.append(f"draft4 -> {os.path.basename(testfile)} -> {test_case['description']} -> {test['description']}")
                 argvalues.append(pytest.param(test_case['schema'], test['data'], test['valid']))
-    """
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
 
