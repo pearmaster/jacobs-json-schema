@@ -8,7 +8,7 @@ class Validator(Draft4Validator):
 
     def __init__(self, schema:dict, lazy_error_reporting:bool=False):
         super().__init__(schema, lazy_error_reporting)
-        self.value_validators["const"] = self._validate_const
+        self.generic_validators["const"] = self._validate_const
         self.array_validators["contains"] = self._validate_contains
     
     @staticmethod
@@ -24,10 +24,31 @@ class Validator(Draft4Validator):
             self._report_validation_error("The data value '{}' is not an integer".format(data), data, schema_type)
         return True
 
-    def _validate_const(self, data:JsonTypes, const_value:dict) -> bool:
-        if data != const_value:
-            self._report_validation_error("The data value '{}' was not the const value '{}'".format(data, const_value), data, const_value)
-        return True
+    def _validate_const(self, data:JsonTypes, const_value:JsonTypes) -> bool:
+        if isinstance(data, int) and isinstance(const_value, float) and (not isinstance(data, bool)) and data == int(const_value):
+            return True
+        elif isinstance(data, float) and isinstance(const_value, int) and (not isinstance(const_value, bool)) and int(data) == const_value:
+            return True
+        elif isinstance(const_value, list) and isinstance(data, list) and len(const_value) == len(data):
+            all_elements_matched = True
+            for i, x in enumerate(const_value):
+                all_elements_matched = self._validate_const(data[i], x) and all_elements_matched
+            if all_elements_matched:
+                return True
+        elif isinstance(const_value, dict) and isinstance(data, dict) and len(const_value) == len(data):
+            all_elements_matched = True
+            for k, v in const_value.items():
+                if k not in data:
+                    all_elements_matched = self._report_validation_error("The property '{}' in the const value was not found in the data".format(k), data, const_value)
+                else:
+                    all_elements_matched = self._validate_const(data[k], v) and all_elements_matched
+                if all_elements_matched:
+                    return True
+        elif (isinstance(data, bool) and not isinstance(const_value, bool)) or (not isinstance(data, bool) and isinstance(const_value, bool)):
+            return self._report_validation_error("The data value '{}' was not the const value '{}'".format(data, const_value), data, const_value)
+        elif data == const_value:
+            return True
+        return self._report_validation_error("The data value '{}' was not the const value '{}'".format(data, const_value), data, const_value)
 
     def _contains_count(self, data:List[JsonTypes], schema:dict) -> int:
         occurances = 0
