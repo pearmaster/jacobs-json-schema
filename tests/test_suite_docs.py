@@ -4,10 +4,11 @@ Uses a bunch of JSON Schema test data to validate a bunch of stuff"""
 import pathlib
 import os.path
 import pytest
+import json
 from pprint import pprint
 
 from jacobsjsondoc.loader import PrepopulatedLoader
-from jacobsjsondoc.document import Document
+from jacobsjsondoc.document import create_document
 
 from .context import jacobsjsonschema
 
@@ -28,19 +29,20 @@ def pytest_generate_tests(metafunc):
         if os.path.basename(testfile) in SPECIAL_TESTS:
             continue
         with open(testfile, "r") as test_file:
-            ppl = PrepopulatedLoader()
-            ppl.prepopulate(os.path.basename(testfile), test_file.read())
-            test_cases = Document(uri=os.path.basename(testfile), resolver=None, loader=ppl)
+            test_cases = json.load(test_file)
 
         for test_case in test_cases:
+            ppl = PrepopulatedLoader()
+            ppl.prepopulate("A", json.dumps(test_case["schema"]))
+            doc = create_document("A", resolver=None, loader=ppl, dollar_id_token=Validator.get_dollar_id_token())
             
             for test in test_case['tests']:
-                testids.append(f"draft4 -> {os.path.basename(testfile)}(doc) -> {test_case['description']} -> {test['description']}")
-                argvalues.append(pytest.param(test_case['schema'], test['data'], test['valid']))
+                testids.append(f"draft4 -> {os.path.basename(testfile)} -> {test_case['description']} -> {test['description']}")
+                argvalues.append(pytest.param(doc, test['data'], test['valid']))
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
 
-def test_draft4(schema, data, valid):
+def test_draft4_doc(schema, data, valid):
     validator = Validator(schema)
     if valid:
         assert validator.validate(data) == valid

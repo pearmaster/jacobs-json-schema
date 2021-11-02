@@ -53,6 +53,10 @@ class Validator(object):
         self._lazy_error_reporting = _lazy_error_reporting
         self._errors = []
 
+    @staticmethod
+    def get_dollar_id_token() -> str:
+        return "id"
+
     def get_errors(self) -> List[str]:
         return self._errors
 
@@ -275,17 +279,28 @@ class Validator(object):
     def _validate_enum(self, data:JsonTypes, schema:List[JsonTypes]) -> bool:
         if not isinstance(schema, list):
             raise InvalidSchemaError("The enum restriction must be a list of values")
-        if data not in schema:
-            return self._report_validation_error("The value '{}' was not in the enumerated list of allowed values".format(data), data, schema)
-        if data in [False, True, 0, 1]:
-            datatype = type(data)
+        if isinstance(data, bool):
+            if data:
+                for x in schema:
+                    if x is True:
+                        return True
+            else:
+                for x in schema:
+                    if x is False:
+                        return True
+        elif isinstance(data, float):
             for x in schema:
-                if data == x and type(x) == datatype:
+                if ((isinstance(x, int) or isinstance(x, float)) and not isinstance(x, bool)) and data == float(x):
                     return True
-                if datatype in [int, float] and type(x) in [int, float]:
+        elif isinstance(data, int):
+            for x in schema:
+                if (isinstance(x, float) or isinstance(x, int) and not isinstance(x, bool)) and data == int(x):
                     return True
-            return self._report_validation_error("The value '{}' was not in the enumerated list of allowed values".format(data), data, schema)
-        return True
+        elif data in schema:
+            return True
+
+        return self._report_validation_error("The value '{}' was not in the enumerated list of allowed values".format(data), data, schema)
+
 
     def _validate_minlength(self, data:str, length:int) -> bool:
         if not isinstance(length, int):
@@ -293,6 +308,7 @@ class Validator(object):
         if not isinstance(data, str):
             #minLength ignores non-strings per spec
             return True
+        data_type = f"Data type {type(data)} len {len(data)}"
         if len(data) < length:
             return self._report_validation_error("The data length {} was less than the minimum {}".format(len(data), length), data, length)
         return True
@@ -452,8 +468,10 @@ class Validator(object):
 
     def _validate(self, data:JsonTypes, schema:dict) -> bool:
         retval = True
-        if '$ref' in schema:
-            retval = self.validate_from_reference(data, schema['$ref']) and retval
+        if hasattr(schema, "_reference"):
+            return self.validate_from_reference(data, schema.reference) and retval
+        elif '$ref' in schema:
+            return self.validate_from_reference(data, schema['$ref']) and retval
         for k, validator_func in self.generic_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
