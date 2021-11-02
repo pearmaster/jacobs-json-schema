@@ -11,6 +11,10 @@ class Validator(Draft4Validator):
         self.value_validators["const"] = self._validate_const
         self.array_validators["contains"] = self._validate_contains
     
+    @staticmethod
+    def get_dollar_id_token() -> str:
+        return "$id"
+
     def _validate_type_integer(self, data:Union[int, float], schema_type) -> bool:
         if isinstance(data, float):
             fractional_part, _ = modf(data)

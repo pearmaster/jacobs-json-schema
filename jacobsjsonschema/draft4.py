@@ -53,6 +53,10 @@ class Validator(object):
         self._lazy_error_reporting = _lazy_error_reporting
         self._errors = []
 
+    @staticmethod
+    def get_dollar_id_token() -> str:
+        return "id"
+
     def get_errors(self) -> List[str]:
         return self._errors
 
@@ -304,6 +308,7 @@ class Validator(object):
         if not isinstance(data, str):
             #minLength ignores non-strings per spec
             return True
+        data_type = f"Data type {type(data)} len {len(data)}"
         if len(data) < length:
             return self._report_validation_error("The data length {} was less than the minimum {}".format(len(data), length), data, length)
         return True
@@ -463,8 +468,10 @@ class Validator(object):
 
     def _validate(self, data:JsonTypes, schema:dict) -> bool:
         retval = True
-        if '$ref' in schema:
-            retval = self.validate_from_reference(data, schema['$ref']) and retval
+        if hasattr(schema, "_reference"):
+            return self.validate_from_reference(data, schema.reference) and retval
+        elif '$ref' in schema:
+            return self.validate_from_reference(data, schema['$ref']) and retval
         for k, validator_func in self.generic_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
