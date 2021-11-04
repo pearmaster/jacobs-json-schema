@@ -1,2 +1,4 @@
 jacobs-json-doc
 pytest
+twine
+requests

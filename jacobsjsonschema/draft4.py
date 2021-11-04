@@ -76,9 +76,13 @@ class Validator(object):
     def validate_from_reference(self, data, dollar_ref):
         uri, path = dollar_ref.split('#')
         if len(uri) > 0:
-            if self._file_loader is None:
-                raise Exception("Unable to load '{}' because file loader was not set".format(uri))
-            remote_schema_root = self._file_loader(uri)
+            try:
+                loader = self._root_schema._loader
+                remote_schema_root = loader.load(uri)
+            except:
+                if self._file_loader is None:
+                    raise Exception("Unable to load '{}' because file loader was not set".format(uri))
+                remote_schema_root = self._file_loader(uri)
             remote_schema_validator = Validator(remote_schema_root)
             remote_schema = remote_schema_validator.walk_schema_from_root(path)
             return remote_schema_validator.validate(data, remote_schema)
