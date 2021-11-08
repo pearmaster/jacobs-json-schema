@@ -473,7 +473,8 @@ class Validator(object):
     def _validate(self, data:JsonTypes, schema:dict) -> bool:
         retval = True
         if hasattr(schema, "_reference"):
-            return self.validate_from_reference(data, schema.reference) and retval
+            resolved_schema = schema.resolve()
+            return self.validate(data, resolved_schema) and retval
         elif '$ref' in schema:
             return self.validate_from_reference(data, schema['$ref']) and retval
         for k, validator_func in self.generic_validators.items():

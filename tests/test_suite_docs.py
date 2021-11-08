@@ -10,6 +10,7 @@ import sys
 if sys.version_info.minor >= 6:
     from jacobsjsondoc.loader import PrepopulatedLoader
     from jacobsjsondoc.document import create_document
+    from jacobsjsondoc.options import ParseOptions
     import requests
 
 from .context import jacobsjsonschema
@@ -18,7 +19,7 @@ from jacobsjsonschema.draft4 import Validator
 
 testsuite_dir = pathlib.Path(__file__).parent / 'JSON-Schema-Test-Suite'
 
-class TestFileLoader(PrepopulatedLoader):
+class UnitTestFileLoader(PrepopulatedLoader):
 
     def load(self, uri: str) -> str:
         if uri.startswith("http://json-schema.org"):
@@ -42,14 +43,20 @@ def pytest_generate_tests(metafunc):
 
         testfile_dir = testsuite_dir / "tests" / "draft4"
 
-        for testfile in testfile_dir.glob("*.json"):
+        for testfile in [testsuite_dir / "tests" / "draft4" / "refRemote.json"]: #testfile_dir.glob("*.json"):
             with open(testfile, "r") as test_file:
                 test_cases = json.load(test_file)
 
             for test_case in test_cases:
-                ppl = TestFileLoader()
-                ppl.prepopulate("A", json.dumps(test_case["schema"]))
-                doc = create_document("A", loader=ppl, dollar_id_token=Validator.get_dollar_id_token())
+                print(test_case)
+                #if test_case['description'] != "fragment within remote ref":
+                #    continue
+                ppl = UnitTestFileLoader()
+                ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
+                options = ParseOptions()
+                options.exclude_dollar_id_parse.append("properties")
+                options.dollar_id_token = Validator.get_dollar_id_token()
+                doc = create_document(os.path.basename(testfile), loader=ppl, options=options)
                 
                 for test in test_case['tests']:
                     testids.append(f"{os.path.splitext(os.path.basename(testfile))[0]} -> {test_case['description']} -> {test['description']}")
