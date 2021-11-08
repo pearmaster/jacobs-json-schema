@@ -16,6 +16,8 @@ class Validator(Draft4Validator):
         return "$id"
 
     def _validate_type_integer(self, data:Union[int, float], schema_type) -> bool:
+        if isinstance(data, bool) or ((not isinstance(data, float)) and (not isinstance(data, int))):
+            return self._report_validation_error("The data type of '{}' is not an integer".format(data), data, schema_type)
         if isinstance(data, float):
             fractional_part, _ = modf(data)
             if fractional_part != 0:
