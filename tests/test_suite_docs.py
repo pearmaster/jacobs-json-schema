@@ -43,14 +43,11 @@ def pytest_generate_tests(metafunc):
 
         testfile_dir = testsuite_dir / "tests" / "draft4"
 
-        for testfile in [testsuite_dir / "tests" / "draft4" / "refRemote.json"]: #testfile_dir.glob("*.json"):
+        for testfile in testfile_dir.glob("*.json"):
             with open(testfile, "r") as test_file:
                 test_cases = json.load(test_file)
 
             for test_case in test_cases:
-                print(test_case)
-                #if test_case['description'] != "fragment within remote ref":
-                #    continue
                 ppl = UnitTestFileLoader()
                 ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
                 options = ParseOptions()
