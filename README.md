@@ -1,5 +1,38 @@
 # jacobs-json-schema
 
+This package is yet another JSON Schema validator.  I wrote it because I needed something small to run in Python 3.5. 
+
+Most data validation features are supported without any dependencies (see "Conformance").
+
+## Usage
+
+Before using this library, the schema dna data must already be parsed into a Python data structure.  This can be as simple as using `json.loads()`.
+
+```py
+from jacobsjsonschema.draft4 import Validator
+
+schema = { "type": "string" }
+validator = Validator(schema)
+
+data = "Hello world"
+validator.validate(data)
+# Will throw if there are any validation errors
+```
+
+Lazy error reporting is also supported.  This means that as much of the data as possible is evaluated, and errors are collected instead of raising an exception.
+
+```py
+schema = { "type": "string" }
+validator = Validator(schema, _lazy_error_reporting=True)
+
+data = "Hello world"
+if validator.validate(data):
+    print("Validated")
+else:
+    for error in validator.get_errors():
+        print(error)
+```
+
 ## Conformance
 
 There are two ways of running the validator: 
@@ -11,7 +44,11 @@ Where "Mostly" is specified, it passes all tests excluding those from `ref.json`
 | Specification | Standalone | using jacobs-json-doc |
 |---------------|------------|-----------------------|
 | Draft-04      | Mostly     | Passed                |
-| Draft-06      |            |                       |
+| Draft-06      |            | Untested              |
 | Draft-07      | Untested   | Untested              |
 | Draft-2019-09 | Untested   | Untested              |
 | Draft-2020-12 | Untested   | Untested              |
+
+## License
+
+GPLv2.  If you modify the source, please publish your modifications.  
