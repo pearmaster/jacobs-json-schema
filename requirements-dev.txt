@@ -1,4 +1,4 @@
-jacobs-json-doc
+jacobs-json-doc==0.10.*
 pytest
 twine
 requests

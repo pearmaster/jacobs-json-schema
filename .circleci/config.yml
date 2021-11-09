@@ -9,6 +9,7 @@ jobs:
           command: |  # create whl and use pipenv to install dependencies
             python setup.py sdist bdist_wheel
             sudo pip install pipenv
+            pipenv install -r requirements-dev.txt
             pipenv install coveralls unittest-xml-reporting
             pipenv install dist/jacobs_json_schema-0.1.0-py3-none-any.whl
       - run:
@@ -27,6 +28,7 @@ jobs:
           command: |  # create whl and use pipenv to install dependencies
             python setup.py sdist bdist_wheel
             sudo pip install pipenv
+            pipenv install -r requirements-dev.txt
             pipenv install coveralls unittest-xml-reporting
             pipenv install dist/jacobs_json_schema-0.1.0-py3-none-any.whl
       - run:
@@ -45,6 +47,7 @@ jobs:
           command: |  # create whl and use pipenv to install dependencies
             python setup.py sdist bdist_wheel
             sudo pip install pipenv
+            pipenv install -r requirements-dev.txt
             pipenv install coveralls unittest-xml-reporting
             pipenv install dist/jacobs_json_schema-0.1.0-py3-none-any.whl
       - run:
@@ -63,6 +66,7 @@ jobs:
           command: |  # create whl and use pipenv to install dependencies
             python setup.py sdist bdist_wheel
             sudo pip install pipenv
+            pipenv install -r requirements-dev.txt
             pipenv install coveralls unittest-xml-reporting
             pipenv install dist/jacobs_json_schema-0.1.0-py3-none-any.whl
       - run:
@@ -81,6 +85,7 @@ jobs:
           command: |  # create whl and use pipenv to install dependencies
             python setup.py sdist bdist_wheel
             sudo pip install pipenv
+            pipenv install -r requirements-dev.txt
             pipenv install coveralls unittest-xml-reporting
             pipenv install dist/jacobs_json_schema-0.1.0-py3-none-any.whl
       - run:
@@ -99,6 +104,7 @@ jobs:
           command: |  # create whl and use pipenv to install dependencies
             python setup.py sdist bdist_wheel
             sudo pip install pipenv
+            pipenv install -r requirements-dev.txt
             pipenv install coveralls unittest-xml-reporting
             pipenv install dist/jacobs_json_schema-0.1.0-py3-none-any.whl
       - run:
@@ -117,6 +123,7 @@ jobs:
           command: |  # create whl, install twine and publish to Test PyPI
             python setup.py sdist bdist_wheel
             sudo pip install pipenv
+            pipenv install -r requirements-dev.txt
             pipenv install twine
             pipenv run twine upload --repository testpypi dist/*
   pypi_publish:
