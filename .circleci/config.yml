@@ -20,8 +20,10 @@ jobs:
           pkg-manager: pip
       - run:
           command: |
-            pytest --cov
+            pytest --cov --junitxml=/tmp/testresults.xml
           name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
       - coveralls/upload
 workflows:
   main:
