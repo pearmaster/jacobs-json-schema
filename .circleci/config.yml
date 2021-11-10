@@ -19,3 +19,7 @@ workflows:
   main:
     jobs:
       - unittests
+      - python/test:
+          pip-dependency-file: "requirements-dev.txt"
+          test-tool: pytest
+        
