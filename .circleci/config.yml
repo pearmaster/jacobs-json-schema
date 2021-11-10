@@ -4,7 +4,24 @@ orbs:
   git: opuscapita/git@0.0.3
   coveralls: coveralls/coveralls@1.0.6
 jobs:
-  unittests:
+  unittests_3_5:
+    executor:
+      name: python/default
+      tag: "3.5"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_9:
     executor:
       name: python/default
       tag: "3.9"
@@ -28,4 +45,5 @@ jobs:
 workflows:
   main:
     jobs:
-      - unittests
+      - unittests_3_5
+      - unittests_3_9
