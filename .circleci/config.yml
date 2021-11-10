@@ -5,12 +5,15 @@ orbs:
   coveralls: coveralls/coveralls@1.0.6
 jobs:
   unittests:
-    executor: python/default
+    executor:
+      name: python/default
+      tag: "3.9"
     steps:
       - git/checkout-with-submodules
       - python/install-packages:
           pkg-manager: pip
       - python/install-packages:
+          pkg-manager: pip
           args: pytest-cov
       - python/install-packages:
           pip-dependency-file: requirements-dev.txt
