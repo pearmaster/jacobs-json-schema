@@ -31,7 +31,7 @@ def pytest_generate_tests(metafunc):
         for test_case in test_cases:
             
             for test in test_case['tests']:
-                testids.append(f"{os.path.splitext(os.path.basename(testfile))[0]} -> {test_case['description']} -> {test['description']}")
+                testids.append("{} -> {} -> {}".format(os.path.splitext(os.path.basename(testfile))[0], test_case['description'], test['description']))
                 argvalues.append(pytest.param(test_case['schema'], test['data'], test['valid']))
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
