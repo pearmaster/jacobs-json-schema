@@ -25,7 +25,7 @@ def pytest_generate_tests(metafunc):
     for testfile in testfile_dir.glob("*.json"):
         if testfile.name in SPECIAL_TESTS:
             continue
-        with open(testfile, "r") as test_file:
+        with testfile.open() as test_file:
             test_cases = json.load(test_file)
 
         for test_case in test_cases:
