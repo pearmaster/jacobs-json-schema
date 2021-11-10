@@ -7,11 +7,11 @@ import json
 import pytest
 from pprint import pprint
 
-from .context import jacobsjsonschema
+from ..context import jacobsjsonschema
 
-from jacobsjsonschema.draft4 import Validator
+from jacobsjsonschema.draft6 import Validator
 
-testsuite_dir = pathlib.Path(__file__).parent / 'JSON-Schema-Test-Suite'
+testsuite_dir = pathlib.Path(__file__).parent.parent / 'JSON-Schema-Test-Suite'
         
 SPECIAL_TESTS = ["ref.json", "id.json", "definitions.json", "refRemote.json"]
 
@@ -20,7 +20,7 @@ def pytest_generate_tests(metafunc):
     argvalues = []
     testids = []
 
-    testfile_dir = testsuite_dir / "tests" / "draft4"
+    testfile_dir = testsuite_dir / "tests" / "draft6"
 
     for testfile in testfile_dir.glob("*.json"):
         if os.path.basename(testfile) in SPECIAL_TESTS:
@@ -36,7 +36,7 @@ def pytest_generate_tests(metafunc):
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
 
-def test_draft4(schema, data, valid):
+def test_draft6(schema, data, valid):
     validator = Validator(schema)
     if valid:
         assert validator.validate(data) == valid

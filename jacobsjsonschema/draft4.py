@@ -312,7 +312,6 @@ class Validator(object):
         if not isinstance(data, str):
             #minLength ignores non-strings per spec
             return True
-        data_type = f"Data type {type(data)} len {len(data)}"
         if len(data) < length:
             return self._report_validation_error("The data length {} was less than the minimum {}".format(len(data), length), data, length)
         return True
