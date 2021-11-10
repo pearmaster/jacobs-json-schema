@@ -23,7 +23,7 @@ def pytest_generate_tests(metafunc):
     testfile_dir = testsuite_dir / "tests" / "draft6"
 
     for testfile in testfile_dir.glob("*.json"):
-        if os.path.basename(testfile) in SPECIAL_TESTS:
+        if testfile.name in SPECIAL_TESTS:
             continue
         with open(testfile, "r") as test_file:
             test_cases = json.load(test_file)
@@ -31,7 +31,7 @@ def pytest_generate_tests(metafunc):
         for test_case in test_cases:
             
             for test in test_case['tests']:
-                testids.append("{} -> {} -> {}".format(os.path.splitext(os.path.basename(testfile))[0], test_case['description'], test['description']))
+                testids.append("{} -> {} -> {}".format(os.path.splitext(testfile.name)[0], test_case['description'], test['description']))
                 argvalues.append(pytest.param(test_case['schema'], test['data'], test['valid']))
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
