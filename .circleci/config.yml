@@ -11,6 +11,8 @@ jobs:
       - python/install-packages:
           pkg-manager: pip
       - python/install-packages:
+          args: pytest-cov
+      - python/install-packages:
           pip-dependency-file: requirements-dev.txt
           pkg-manager: pip
       - run:
