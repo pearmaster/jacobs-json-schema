@@ -13,7 +13,7 @@ from jacobsjsonschema.draft6 import Validator
 
 testsuite_dir = pathlib.Path(__file__).parent.parent / 'JSON-Schema-Test-Suite'
         
-SPECIAL_TESTS = ["ref.json", "id.json", "definitions.json", "refRemote.json"]
+SPECIAL_TESTS = ["ref.json", "id.json", "definitions.json", "refRemote.json", "unknownKeyword.json"]
 
 def pytest_generate_tests(metafunc):
     argnames = ('schema', 'data', 'valid')
