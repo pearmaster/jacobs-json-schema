@@ -2,7 +2,6 @@ version: 2.1
 orbs:
   python: circleci/python@1.4.0
   git: opuscapita/git@0.0.3
-  coveralls: coveralls/coveralls@1.0.6
 jobs:
   unittests_3_5:
     executor:
@@ -21,24 +20,28 @@ jobs:
           name: Test
       - store_test_results:
           path: /tmp/testresults.xml
-  unittests_3_9:
+  unittests_3_10:
     executor:
       name: python/default
-      tag: "3.9"
+      tag: "3.10"
     steps:
       - git/checkout-with-submodules
       - python/install-packages:
           pkg-manager: pip
       - python/install-packages:
           pkg-manager: pip
-          args: pytest-cov
+          args: pytest-cov coveralls
       - python/install-packages:
           pip-dependency-file: requirements-dev.txt
           pkg-manager: pip
       - run:
           command: |
-            pytest --cov --junitxml=/tmp/testresults.xml
+            pytest --cov=jacobsjsonschema --junitxml=/tmp/testresults.xml tests
           name: Test
+      - run:
+          command: |
+            coveralls
+          name: Coveralls
       - store_test_results:
           path: /tmp/testresults.xml
       - coveralls/upload
