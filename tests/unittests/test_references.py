@@ -1,7 +1,7 @@
 
 import unittest
 
-from .context import jacobsjsonschema
+from ..context import jacobsjsonschema
 
 from jacobsjsonschema.draft4 import Validator
 

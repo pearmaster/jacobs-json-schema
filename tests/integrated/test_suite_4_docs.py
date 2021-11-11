@@ -13,11 +13,11 @@ if sys.version_info.minor >= 6:
     from jacobsjsondoc.options import ParseOptions
     import requests
 
-from .context import jacobsjsonschema
+from ..context import jacobsjsonschema
 
 from jacobsjsonschema.draft4 import Validator
 
-testsuite_dir = pathlib.Path(__file__).parent / 'JSON-Schema-Test-Suite'
+testsuite_dir = pathlib.Path(__file__).parent.parent / 'JSON-Schema-Test-Suite'
 
 class UnitTestFileLoader(PrepopulatedLoader):
 

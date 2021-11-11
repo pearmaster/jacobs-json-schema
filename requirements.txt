@@ -1,0 +1,4 @@
+# Yes, there are no absolute dependencies.
+
+# requirements-dev.txt has dependencies needed for development and test
+# requirements-extras.txt lists optional packages that may be used to enhance functionality.

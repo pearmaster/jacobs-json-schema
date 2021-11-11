@@ -1,0 +1,169 @@
+version: 2.1
+orbs:
+  python: circleci/python@1.4.0
+  git: opuscapita/git@0.0.3
+jobs:
+  unittests_3_5:
+    executor:
+      name: python/default
+      tag: "3.5"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          args: pytest
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml --ignore=./tests/integrated/
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_6:
+    executor:
+      name: python/default
+      tag: "3.6"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_7:
+    executor:
+      name: python/default
+      tag: "3.7"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_8:
+    executor:
+      name: python/default
+      tag: "3.8"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_9:
+    executor:
+      name: python/default
+      tag: "3.9"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_10:
+    executor:
+      name: python/default
+      tag: "3.10"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pkg-manager: pip
+          args: pytest-cov coveralls
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --cov=jacobsjsonschema --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - run:
+          command: |
+            coveralls
+          name: Coveralls
+      - store_test_results:
+          path: /tmp/testresults.xml
+  test_publish:
+    executor: python/default
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          args: twine
+      - python/dist
+      - run: "python -m twine upload --repository testpypi dist/*"
+  publish:
+    executor: python/default
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          args: twine
+      - python/dist
+      - run: "python -m twine upload dist/*"
+workflows:
+  main:
+    jobs:
+      - unittests_3_5
+      - unittests_3_6
+      - unittests_3_7
+      - unittests_3_8
+      - unittests_3_9
+      - unittests_3_10
+      - test_publish:
+          context:
+            - python_twine_test
+          requires:
+            - unittests_3_5
+            - unittests_3_6
+            - unittests_3_7
+            - unittests_3_8
+            - unittests_3_9
+            - unittests_3_10
+          filters:
+            branches:
+              only: next
+      - publish:
+          context:
+            - python_twine
+          requires:
+            - unittests_3_5
+            - unittests_3_6
+            - unittests_3_7
+            - unittests_3_8
+            - unittests_3_9
+            - unittests_3_10
+          filters:
+            branches:
+              only: main
+
+

@@ -1,8 +1,8 @@
 
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Dict
 from math import modf
 
-from .draft4 import Validator as Draft4Validator, JsonTypes, JsonSchemaValidationError
+from .draft4 import Validator as Draft4Validator, JsonTypes, JsonSchemaValidationError, InvalidSchemaError
 
 class Validator(Draft4Validator):
 
@@ -10,7 +10,12 @@ class Validator(Draft4Validator):
         super().__init__(schema, lazy_error_reporting)
         self.generic_validators["const"] = self._validate_const
         self.array_validators["contains"] = self._validate_contains
-    
+        self.object_validators["propertyNames"] = self._validate_propertynames
+        self.value_validators["maximum"] = self._validate_maximum
+        self.value_validators["minimum"] = self._validate_minimum
+        self.value_validators["exclusiveMaximum"] = lambda d,s : self._validate_maximum(d, s, True)
+        self.value_validators["exclusiveMinimum"] = lambda d,s : self._validate_minimum(d, s, True)
+
     @staticmethod
     def get_dollar_id_token() -> str:
         return "$id"
@@ -52,6 +57,21 @@ class Validator(Draft4Validator):
             return True
         return self._report_validation_error("The data value '{}' was not the const value '{}'".format(data, const_value), data, const_value)
 
+    def _validate_propertynames(self, data:dict, schema:dict) -> bool:
+        if not isinstance(data, dict):
+            return True
+        if not isinstance(schema, dict) and not isinstance(schema, bool):
+            raise InvalidSchemaError("propertyNames must be a valid schema object")
+        all_names_valid = True
+        for name in data.keys():
+            try:
+                all_names_valid = self._validate(name, schema) and all_names_valid
+            except JsonSchemaValidationError as e:
+                return self._report_validation_error("Property name '{}' didn't conform to the propertyNames schema: {}".format(name, e))
+        if not all_names_valid:
+            return self._report_validation_error("Property names didn't conform to the propertyNames schema")
+        return True
+
     def _contains_count(self, data:List[JsonTypes], schema:dict) -> int:
         occurances = 0
         for item in data:
@@ -72,6 +92,28 @@ class Validator(Draft4Validator):
         if occurances < 1:
             return self._report_validation_error("There weren't any occurances in the array", data, schema)
         return True
+
+    def _value_validate(self, data:Union[int,float,str,None], schema:dict) -> bool:
+        retval = True
+        for k, validator_func in self.value_validators.items():
+            if k in schema:
+                retval = validator_func(data, schema[k]) and retval
+        return retval
+
+    def _validate_dependency(self, data:dict, required:Dict[str,Union[list,dict]]) -> bool:
+        retval = True
+        for requirement, consequence in required.items():
+            if requirement in data:
+                if isinstance(consequence, bool):
+                    if not consequence:
+                        retval = self._report_validation_error("For the {} property, false schema invalidates data", requirement)
+                elif isinstance(consequence, list):
+                    retval = self._validate_required(data, consequence) and retval
+                elif isinstance(consequence, dict):
+                    retval = self.validate(data, consequence) and retval
+                else:
+                    return InvalidSchemaError("Dependency must be either a list or a schema")
+        return retval
 
     def _validate(self, data:JsonTypes, schema:Union[dict,bool]) -> bool:
         if schema is True:
