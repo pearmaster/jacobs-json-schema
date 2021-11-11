@@ -121,6 +121,15 @@ jobs:
           args: twine
       - python/dist
       - run: "python -m twine upload --repository testpypi dist/*"
+  publish:
+    executor: python/default
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          args: twine
+      - python/dist
+      - run: "python -m twine upload dist/*"
 workflows:
   main:
     jobs:
@@ -143,5 +152,18 @@ workflows:
           filters:
             branches:
               only: next
+      - publish:
+          context:
+            - python_twine
+          requires:
+            - unittests_3_5
+            - unittests_3_6
+            - unittests_3_7
+            - unittests_3_8
+            - unittests_3_9
+            - unittests_3_10
+          filters:
+            branches:
+              only: main
 
 
