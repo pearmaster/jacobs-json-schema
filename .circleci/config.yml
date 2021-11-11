@@ -20,6 +20,57 @@ jobs:
           name: Test
       - store_test_results:
           path: /tmp/testresults.xml
+  unittests_3_6:
+    executor:
+      name: python/default
+      tag: "3.6"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_7:
+    executor:
+      name: python/default
+      tag: "3.7"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
+  unittests_3_8:
+    executor:
+      name: python/default
+      tag: "3.8"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - store_test_results:
+          path: /tmp/testresults.xml
   unittests_3_9:
     executor:
       name: python/default
@@ -61,9 +112,34 @@ jobs:
           name: Coveralls
       - store_test_results:
           path: /tmp/testresults.xml
+  test_publish:
+    executor: python/default
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          args: twine
+      - python/dist
+      - run: "python -m twine upload --repository testpypi dist/*"
 workflows:
   main:
     jobs:
       - unittests_3_5
+      - unittests_3_6
+      - unittests_3_7
+      - unittests_3_8
       - unittests_3_9
       - unittests_3_10
+      - test_publish:
+          requires:
+            - unittests_3_5
+            - unittests_3_6
+            - unittests_3_7
+            - unittests_3_8
+            - unittests_3_9
+            - unittests_3_10
+          filters:
+            branches:
+              only: next
+
+
