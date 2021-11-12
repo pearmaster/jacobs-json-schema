@@ -7,11 +7,11 @@ jobs:
     docker:
       - image: pypy:3.8
     steps:
-      - checkout
+      - git/checkout-with-submodules
       - run:
          command: |
             pypy -m pip install pytest
-            pypy -m pytest --junitxml=/tmp/testresults.xml tests/standalone
+            pytest --junitxml=/tmp/testresults.xml tests/standalone
       - store_test_results:
           path: /tmp/testresults.xml
       - store_artifacts:
@@ -20,11 +20,11 @@ jobs:
     docker:
       - image: pypy:3.7
     steps:
-      - checkout
+      - git/checkout-with-submodules
       - run:
          command: |
             pypy -m pip install pytest
-            pypy -m pytest --junitxml=/tmp/testresults.xml tests/standalone
+            pytest --junitxml=/tmp/testresults.xml tests/standalone
       - store_test_results:
           path: /tmp/testresults.xml
       - store_artifacts:
