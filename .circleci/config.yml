@@ -14,6 +14,21 @@ jobs:
             pypy -m pytest --junitxml=/tmp/testresults.xml tests/standalone
       - store_test_results:
           path: /tmp/testresults.xml
+      - store_artifacts:
+          path: /tmp/testresults.xml
+  unittests_pypy_3_7:
+    docker:
+      - image: pypy:3.7
+    steps:
+      - checkout
+      - run:
+         command: |
+            pypy -m pip install pytest
+            pypy -m pytest --junitxml=/tmp/testresults.xml tests/standalone
+      - store_test_results:
+          path: /tmp/testresults.xml
+      - store_artifacts:
+          path: /tmp/testresults.xml
   unittests_3_5:
     executor:
       name: python/default
@@ -151,6 +166,7 @@ workflows:
       - unittests_3_9
       - unittests_3_10
       - unittests_pypy_3_8
+      - unittests_pypy_3_7
       - test_publish:
           context:
             - python_twine_test
