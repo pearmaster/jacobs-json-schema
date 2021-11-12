@@ -3,6 +3,17 @@ orbs:
   python: circleci/python@1.4.0
   git: opuscapita/git@0.0.3
 jobs:
+  unittests_pypy_38:
+    docker:
+      - image: pypy:3.8
+    steps:
+      - checkout
+      - run:
+         command: |
+            pypy -m pip install pytest
+            pypy -m pytest --junitxml=/tmp/testresults.xml tests/standalone
+      - store_test_results:
+          path: /tmp/testresults.xml
   unittests_3_5:
     executor:
       name: python/default
