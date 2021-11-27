@@ -47,7 +47,7 @@ Where "Mostly" is specified, it passes all tests excluding those from `ref.json`
 | Specification | Standalone | using jacobs-json-doc |
 |---------------|------------|-----------------------|
 | Draft-04      | Mostly     | Passed                |
-| Draft-06      | Mostly     | Untested              |
+| Draft-06      | Mostly     | Passed                |
 | Draft-07      | Untested   | Untested              |
 | Draft-2019-09 | Untested   | Untested              |
 | Draft-2020-12 | Untested   | Untested              |

@@ -3,6 +3,7 @@ Uses a bunch of JSON Schema test data to validate a bunch of stuff"""
 
 import pathlib
 import os.path
+from jacobsjsondoc.options import JsonSchemaParseOptions
 import pytest
 import json
 import sys
@@ -29,7 +30,7 @@ def pytest_generate_tests(metafunc):
         testfile_dir = testsuite_dir / "tests" / "draft6"
 
         for testfile in testfile_dir.glob("*.json"):
-            if testfile.name in ["boolean_schema.json"]:
+            if testfile.name not in ["unknownKeyword.json"]:
                 continue
 
             with open(testfile, "r") as test_file:
@@ -39,8 +40,7 @@ def pytest_generate_tests(metafunc):
             for test_case in test_cases:
                 ppl = UnitTestFileLoader()
                 ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
-                options = ParseOptions()
-                options.exclude_dollar_id_parse.append("properties")
+                options = JsonSchemaParseOptions()
                 options.dollar_id_token = Validator.get_dollar_id_token()
                 doc = create_document(os.path.basename(testfile), loader=ppl, options=options)
                 
@@ -50,7 +50,7 @@ def pytest_generate_tests(metafunc):
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
 
-def test_draft6_doc(schema, data, valid):
+def test_d6_doc(schema, data, valid):
     if sys.version_info.minor < 6:
         pytest.skip()
     validator = Validator(schema)
