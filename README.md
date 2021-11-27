@@ -49,7 +49,7 @@ Where "Mostly" is specified, it passes all tests excluding those from `ref.json`
 | Python Version| 3.5+       | 3.7+
 | Draft-04      | Mostly     | Passed                |
 | Draft-06      | Mostly     | Passed                |
-| Draft-07      | Untested   | Untested              |
+| Draft-07      | Mostly     | Untested              |
 | Draft-2019-09 | Untested   | Untested              |
 | Draft-2020-12 | Untested   | Untested              |
 
