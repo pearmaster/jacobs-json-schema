@@ -29,11 +29,11 @@ jobs:
       - python/install-packages:
           pkg-manager: pip
       - python/install-packages:
-          pip-dependency-file: requirements-dev.txt
+          args: pytest
           pkg-manager: pip
       - run:
           command: |
-            pytest --junitxml=/tmp/testresults.xml tests
+            pytest --junitxml=/tmp/testresults.xml --ignore=./tests/integrated/
           name: Test
       - store_test_results:
           path: /tmp/testresults.xml

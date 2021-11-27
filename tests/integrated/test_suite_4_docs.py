@@ -7,7 +7,7 @@ import pytest
 import json
 import sys
 
-if sys.version_info.minor >= 6:
+if sys.version_info.minor >= 7:
     from jacobsjsondoc.loader import PrepopulatedLoader
     from jacobsjsondoc.document import create_document
     from jacobsjsondoc.options import JsonSchemaDraft4ParseOptions
@@ -61,7 +61,7 @@ def pytest_generate_tests(metafunc):
     metafunc.parametrize(argnames, argvalues, ids=testids)
 
 def test_d4_doc(schema, data, valid):
-    if sys.version_info.minor < 6:
+    if sys.version_info.minor < 7:
         pytest.skip()
         
     validator = Validator(schema)
