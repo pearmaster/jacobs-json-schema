@@ -10,7 +10,7 @@ import sys
 if sys.version_info.minor >= 6:
     from jacobsjsondoc.loader import PrepopulatedLoader
     from jacobsjsondoc.document import create_document
-    from jacobsjsondoc.options import JsonSchemaParseOptions
+    from jacobsjsondoc.options import JsonSchemaDraft4ParseOptions
     import requests
 
 from ..context import jacobsjsonschema
@@ -50,7 +50,7 @@ def pytest_generate_tests(metafunc):
             for test_case in test_cases:
                 ppl = UnitTestFileLoader()
                 ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
-                options = JsonSchemaParseOptions()
+                options = JsonSchemaDraft4ParseOptions()
                 options.dollar_id_token = Validator.get_dollar_id_token()
                 doc = create_document(os.path.basename(testfile), loader=ppl, options=options)
                 
