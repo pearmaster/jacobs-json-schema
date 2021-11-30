@@ -26,7 +26,7 @@ Lazy error reporting is also supported.  This means that as much of the data as 
 
 ```py
 schema = { "type": "string" }
-validator = Validator(schema, _lazy_error_reporting=True)
+validator = Validator(schema, lazy_error_reporting=True)
 
 data = "Hello world"
 if validator.validate(data):

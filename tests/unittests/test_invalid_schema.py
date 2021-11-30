@@ -22,7 +22,7 @@ class TestInvalidMinLength(unittest.TestCase):
         }
         
     def test_raises_invalid_schema(self):
-        validator = Validator(self.schema, _lazy_error_reporting=True)
+        validator = Validator(self.schema, lazy_error_reporting=True)
         with pytest.raises(InvalidSchemaError):
             validator.validate(self.data)
 
@@ -43,7 +43,7 @@ class TestInvalidMaxLength(unittest.TestCase):
         }
         
     def test_raises_invalid_schema(self):
-        validator = Validator(self.schema, _lazy_error_reporting=True)
+        validator = Validator(self.schema, lazy_error_reporting=True)
         with pytest.raises(InvalidSchemaError):
             validator.validate(self.data)
 
@@ -64,6 +64,6 @@ class TestInvalidEnum(unittest.TestCase):
         }
         
     def test_raises_invalid_schema(self):
-        validator = Validator(self.schema, _lazy_error_reporting=True)
+        validator = Validator(self.schema, lazy_error_reporting=True)
         with pytest.raises(InvalidSchemaError):
             validator.validate(self.data)

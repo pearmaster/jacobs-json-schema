@@ -15,7 +15,7 @@ JsonTypes = Union[str,dict,list,int,float,None]
 
 class Validator(object):
 
-    def __init__(self, schema:dict, _lazy_error_reporting=False):
+    def __init__(self, schema:dict, lazy_error_reporting=False):
         self.generic_validators = {
             "type": self._validate_type,
             "anyOf": self._validate_anyof,

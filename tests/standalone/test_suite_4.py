@@ -45,7 +45,7 @@ def test_draft4(schema, data, valid):
             validator.validate(data)
 
 def test_draft4_lazy(schema, data, valid):
-    lazy_validator = Validator(schema, _lazy_error_reporting=True)
+    lazy_validator = Validator(schema, lazy_error_reporting=True)
     assert lazy_validator.validate(data) == valid
     if not valid:
         assert len(lazy_validator.get_errors()) > 0

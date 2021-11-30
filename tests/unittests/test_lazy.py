@@ -7,7 +7,7 @@ from jacobsjsonschema.draft4 import Validator
 class LazyMixin:
 
     def test_does_not_validate(self):
-        validator = Validator(self.schema, _lazy_error_reporting=True)
+        validator = Validator(self.schema, lazy_error_reporting=True)
         self.assertFalse(validator.validate(self.data))
 
 
@@ -31,7 +31,7 @@ class TestLazyReporting(unittest.TestCase, LazyMixin):
         }
         
     def test_number_of_errors(self):
-        validator = Validator(self.schema, _lazy_error_reporting=True)
+        validator = Validator(self.schema, lazy_error_reporting=True)
         validator.validate(self.data)
         self.assertEqual(len(validator.get_errors()), 2)
 
