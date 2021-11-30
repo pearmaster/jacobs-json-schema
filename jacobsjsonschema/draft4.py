@@ -143,10 +143,11 @@ class Validator(object):
             raise InvalidSchemaError("Properties schema must be an object")
         if not isinstance(data, dict):
             return self._report_validation_error("Cannot validate properties on a non-object", data, schema)
+        retval = True
         for k, v in data.items():
             if k in schema:
-                self.validate(v, schema[k])
-        return True
+                retval = self.validate(v, schema[k]) and retval
+        return retval
 
     def _validate_pattern_properties(self, data:Dict[str,JsonTypes], schema:Dict[str,dict]) -> bool:
         if not isinstance(data, dict):
