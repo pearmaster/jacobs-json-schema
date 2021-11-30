@@ -50,7 +50,7 @@ class Validator(object):
         self._root_schema = schema
         self._file_loader = None
         self._temp_ignore_errors = False
-        self._lazy_error_reporting = _lazy_error_reporting
+        self._lazy_error_reporting = lazy_error_reporting
         self._errors = []
 
     @staticmethod
