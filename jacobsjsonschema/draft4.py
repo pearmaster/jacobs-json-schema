@@ -260,9 +260,10 @@ class Validator(object):
     def _validate_allof(self, data:JsonTypes, schemas:List[dict]) -> bool:
         if not isinstance(schemas, list):
             raise InvalidSchemaError("AnyOf schema was not a list")
+        retval = True
         for schema in schemas:
-            self.validate(data, schema)
-        return True
+            retval = self.validate(data, schema) and retval
+        return retval
 
     def _validate_not(self, data:JsonTypes, schema:dict) -> bool:
         try:
@@ -388,7 +389,7 @@ class Validator(object):
                 if additionalItems:
                     retval = self._validate_prefixitems(data[:schema_len], schema)
                     for item in data[schema_len:]:
-                        retval = (additionalItems is True) or self.validate(item, additionalItems)
+                        retval = ((additionalItems is True) or self.validate(item, additionalItems)) and retval
                     return retval
                 else:
                     return self._report_validation_error("There are too many items when additional items is false", data, schema)
@@ -437,7 +438,7 @@ class Validator(object):
         retval = True
         additionalItems = schema['additionalItems'] if 'additionalItems' in schema else True
         if 'items' in schema:
-            retvat = self._validate_items(data, schema['items'], additionalItems)
+            retval = self._validate_items(data, schema['items'], additionalItems)
         for k, validator_func in self.array_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
@@ -461,10 +462,10 @@ class Validator(object):
         retval = True
         if 'maximum' in schema:
             exclusive = schema['exclusiveMaximum'] if 'exclusiveMaximum' in schema else False
-            retval = self._validate_maximum(data, schema['maximum'], exclusive=exclusive)
+            retval = self._validate_maximum(data, schema['maximum'], exclusive=exclusive) and retval
         if 'minimum' in schema:
             exclusive = schema['exclusiveMinimum'] if 'exclusiveMinimum' in schema else False
-            retval = self._validate_minimum(data, schema['minimum'], exclusive=exclusive)
+            retval = self._validate_minimum(data, schema['minimum'], exclusive=exclusive) and retval
         for k, validator_func in self.value_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
