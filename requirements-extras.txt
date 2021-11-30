@@ -1,1 +1,1 @@
-jacobs-json-doc==0.10.*
+jacobs-json-doc==0.13.*

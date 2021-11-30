@@ -26,7 +26,7 @@ Lazy error reporting is also supported.  This means that as much of the data as 
 
 ```py
 schema = { "type": "string" }
-validator = Validator(schema, _lazy_error_reporting=True)
+validator = Validator(schema, lazy_error_reporting=True)
 
 data = "Hello world"
 if validator.validate(data):
@@ -46,8 +46,9 @@ Where "Mostly" is specified, it passes all tests excluding those from `ref.json`
 
 | Specification | Standalone | using jacobs-json-doc |
 |---------------|------------|-----------------------|
+| Python Version| 3.5+       | 3.7+
 | Draft-04      | Mostly     | Passed                |
-| Draft-06      | Mostly     | Untested              |
+| Draft-06      | Mostly     | Passed                |
 | Draft-07      | Untested   | Untested              |
 | Draft-2019-09 | Untested   | Untested              |
 | Draft-2020-12 | Untested   | Untested              |

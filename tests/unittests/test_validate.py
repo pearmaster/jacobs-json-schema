@@ -42,5 +42,5 @@ class TestValidate(unittest.TestCase):
             ],
             "not": {"type": "integer"},
         }
-        validator = Validator(schema, _lazy_error_reporting=False)
+        validator = Validator(schema, lazy_error_reporting=False)
         self.assertTrue(validator.validate(data))

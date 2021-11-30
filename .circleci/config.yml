@@ -3,7 +3,7 @@ orbs:
   python: circleci/python@1.4.0
   git: opuscapita/git@0.0.3
 jobs:
-  unittests_pypy_3_8:
+  standalone_unittests_pypy_3_8:
     docker:
       - image: pypy:3.8
     steps:
@@ -16,7 +16,7 @@ jobs:
           path: /tmp/testresults.xml
       - store_artifacts:
           path: /tmp/testresults.xml
-  unittests_pypy_3_7:
+  standalone_unittests_pypy_3_7:
     docker:
       - image: pypy:3.7
     steps:
@@ -29,7 +29,7 @@ jobs:
           path: /tmp/testresults.xml
       - store_artifacts:
           path: /tmp/testresults.xml
-  unittests_3_5:
+  standalone_unittests_3_5:
     executor:
       name: python/default
       tag: "3.5"
@@ -46,7 +46,7 @@ jobs:
           name: Test
       - store_test_results:
           path: /tmp/testresults.xml
-  unittests_3_6:
+  standalone_unittests_3_6:
     executor:
       name: python/default
       tag: "3.6"
@@ -55,11 +55,11 @@ jobs:
       - python/install-packages:
           pkg-manager: pip
       - python/install-packages:
-          pip-dependency-file: requirements-dev.txt
+          args: pytest
           pkg-manager: pip
       - run:
           command: |
-            pytest --junitxml=/tmp/testresults.xml tests
+            pytest --junitxml=/tmp/testresults.xml --ignore=./tests/integrated/
           name: Test
       - store_test_results:
           path: /tmp/testresults.xml
@@ -159,20 +159,20 @@ jobs:
 workflows:
   main:
     jobs:
-      - unittests_3_5
-      - unittests_3_6
+      - standalone_unittests_3_5
+      - standalone_unittests_3_6
       - unittests_3_7
       - unittests_3_8
       - unittests_3_9
       - unittests_3_10
-      - unittests_pypy_3_8
-      - unittests_pypy_3_7
+      - standalone_unittests_pypy_3_8
+      - standalone_unittests_pypy_3_7
       - test_publish:
           context:
             - python_twine_test
           requires:
-            - unittests_3_5
-            - unittests_3_6
+            - standalone_unittests_3_5
+            - standalone_unittests_3_6
             - unittests_3_7
             - unittests_3_8
             - unittests_3_9
@@ -184,8 +184,8 @@ workflows:
           context:
             - python_twine
           requires:
-            - unittests_3_5
-            - unittests_3_6
+            - standalone_unittests_3_5
+            - standalone_unittests_3_6
             - unittests_3_7
             - unittests_3_8
             - unittests_3_9

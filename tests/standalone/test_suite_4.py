@@ -39,7 +39,13 @@ def pytest_generate_tests(metafunc):
 def test_draft4(schema, data, valid):
     validator = Validator(schema)
     if valid:
-        assert validator.validate(data) == valid
+        validator.validate(data)
     else:
         with pytest.raises(jacobsjsonschema.draft4.JsonSchemaValidationError):
             validator.validate(data)
+
+def test_draft4_lazy(schema, data, valid):
+    lazy_validator = Validator(schema, lazy_error_reporting=True)
+    assert lazy_validator.validate(data) == valid
+    if not valid:
+        assert len(lazy_validator.get_errors()) > 0

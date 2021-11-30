@@ -7,10 +7,10 @@ import pytest
 import json
 import sys
 
-if sys.version_info.minor >= 6:
+if sys.version_info.minor >= 7:
     from jacobsjsondoc.loader import PrepopulatedLoader
     from jacobsjsondoc.document import create_document
-    from jacobsjsondoc.options import ParseOptions
+    from jacobsjsondoc.options import JsonSchemaDraft4ParseOptions
     import requests
 
 from ..context import jacobsjsonschema
@@ -50,8 +50,7 @@ def pytest_generate_tests(metafunc):
             for test_case in test_cases:
                 ppl = UnitTestFileLoader()
                 ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
-                options = ParseOptions()
-                options.exclude_dollar_id_parse.append("properties")
+                options = JsonSchemaDraft4ParseOptions()
                 options.dollar_id_token = Validator.get_dollar_id_token()
                 doc = create_document(os.path.basename(testfile), loader=ppl, options=options)
                 
@@ -61,9 +60,10 @@ def pytest_generate_tests(metafunc):
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
 
-def test_draft4_doc(schema, data, valid):
-    if sys.version_info.minor < 6:
+def test_d4_doc(schema, data, valid):
+    if sys.version_info.minor < 7:
         pytest.skip()
+        
     validator = Validator(schema)
     if valid:
         assert validator.validate(data) == valid

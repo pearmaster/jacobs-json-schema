@@ -20,5 +20,5 @@ class TestReferences(unittest.TestCase):
             }
         }
         data = [1,2,3,4]
-        validator = Validator(schema, _lazy_error_reporting=False)
+        validator = Validator(schema, lazy_error_reporting=False)
         self.assertTrue(validator.validate_from_reference(12, "#/definitions/myint"))
