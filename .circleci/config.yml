@@ -3,7 +3,7 @@ orbs:
   python: circleci/python@1.4.0
   git: opuscapita/git@0.0.3
 jobs:
-  unittests_3_5:
+  standalone_unittests_3_5:
     executor:
       name: python/default
       tag: "3.5"
@@ -20,7 +20,7 @@ jobs:
           name: Test
       - store_test_results:
           path: /tmp/testresults.xml
-  unittests_3_6:
+  standalone_unittests_3_6:
     executor:
       name: python/default
       tag: "3.6"
@@ -133,8 +133,8 @@ jobs:
 workflows:
   main:
     jobs:
-      - unittests_3_5
-      - unittests_3_6
+      - standalone_unittests_3_5
+      - standalone_unittests_3_6
       - unittests_3_7
       - unittests_3_8
       - unittests_3_9
@@ -143,8 +143,8 @@ workflows:
           context:
             - python_twine_test
           requires:
-            - unittests_3_5
-            - unittests_3_6
+            - standalone_unittests_3_5
+            - standalone_unittests_3_6
             - unittests_3_7
             - unittests_3_8
             - unittests_3_9
@@ -156,8 +156,8 @@ workflows:
           context:
             - python_twine
           requires:
-            - unittests_3_5
-            - unittests_3_6
+            - standalone_unittests_3_5
+            - standalone_unittests_3_6
             - unittests_3_7
             - unittests_3_8
             - unittests_3_9
