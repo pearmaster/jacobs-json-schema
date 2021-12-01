@@ -26,7 +26,7 @@ class Validator(Draft6Validator):
             return True
 
     def _validate(self, data:JsonTypes, schema:Union[dict,bool]) -> bool:
-        retval = super().validate(data, schema)
+        retval = super()._validate(data, schema)
         if isinstance(schema, dict) and 'if' in schema:
             then_schema = schema['then'] if 'then' in schema else None
             else_schema = schema['else'] if 'else' in schema else None

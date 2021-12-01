@@ -91,9 +91,9 @@ class Validator(object):
             return self.validate(data, schema)
 
     def _report_validation_error(self, message:str, data=None, schema=None) -> bool:
-        if hasattr(data, "line"):
+        if hasattr(data, "line") and data.line is not None:
             message = "Input line {}: {}".format(data.line, message)
-        if hasattr(schema, "line"):
+        if hasattr(schema, "line") and schema.line is not None:
             message = "{} (schema line {})".format(message, schema.line)
         if not self._lazy_error_reporting:
             raise JsonSchemaValidationError(message)
