@@ -12,7 +12,7 @@ Most data validation features are supported without any dependencies (see "Confo
 Before using this library, the schema dna data must already be parsed into a Python data structure.  This can be as simple as using `json.loads()`.
 
 ```py
-from jacobsjsonschema.draft4 import Validator
+from jacobsjsonschema.draft7 import Validator
 
 schema = { "type": "string" }
 validator = Validator(schema)
