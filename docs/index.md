@@ -1,17 +1,11 @@
-# Welcome to MkDocs
+# Documentation for `jacobs-json-docs`
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+JSON Schema is a way of validating that a JSON structure has a particular form. 
 
-## Commands
+This project is a JSON Schema validator.  Given a schema and a structure, it validates that the structure conforms to the contraints of the schema.
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+### Alternatives
 
-## Project layout
-
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+There are other python libraries that do JSON Schema validation.  This project aims to be slightly different from alternatives in these aspects:
+ * More memory efficient (perhaps at the expense of speed).
+ * Minimize external dependencies.

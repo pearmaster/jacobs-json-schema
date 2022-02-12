@@ -2,8 +2,13 @@ image:
   file: .gitpod.Dockerfile
 tasks:
   - init: pip install -r requirements-dev.txt
+  - name: Open docs
+    init: mkdocs serve --dev-addr 0.0.0.0:8000
 vscode:
   extensions:
     - littlefoxteam.vscode-python-test-adapter@0.3.16:tZ/6xOSSdKUaq6JCUVkD+A==
     - ms-python.python
     - hbenl.test-adapter-converter
+ports:
+  - port: 8000
+    onOpen: open-preview
