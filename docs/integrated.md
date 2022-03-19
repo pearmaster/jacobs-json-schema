@@ -58,3 +58,6 @@ else:
     print("Validated")
 
 ```
+
+Note, that when using file loading, the initial schema document must be loaded through its URI.
+
