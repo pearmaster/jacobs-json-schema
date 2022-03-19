@@ -4,14 +4,13 @@ from typing import Union, List, Dict, Optional, Callable
 import re
 
 from .bool_compare_util import replace_bools_for_comparison
+from .json_types import JsonTypes
 
 class JsonSchemaValidationError(Exception):
     pass
 
 class InvalidSchemaError(Exception):
     pass
-
-JsonTypes = Union[str,dict,list,int,float,None]
 
 class Validator(object):
 

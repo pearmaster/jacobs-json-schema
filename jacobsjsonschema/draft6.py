@@ -2,7 +2,11 @@
 from typing import Union, Optional, List, Dict
 from math import modf
 
-from .draft4 import Validator as Draft4Validator, JsonTypes, JsonSchemaValidationError, InvalidSchemaError
+from .json_types import JsonTypes
+from .draft4 import Validator as Draft4Validator, JsonSchemaValidationError as imported_jsve, InvalidSchemaError as imported_ise
+
+InvalidSchemaError = imported_ise
+JsonSchemaValidationError = imported_jsve
 
 class Validator(Draft4Validator):
 
