@@ -1,8 +1,11 @@
 
 from typing import Optional, Union
 
-from .draft4 import InvalidSchemaError, JsonSchemaValidationError, JsonTypes
-from .draft6 import Validator as Draft6Validator
+from .json_types import JsonTypes
+from .draft6 import Validator as Draft6Validator, JsonSchemaValidationError as imported_jsve, InvalidSchemaError as imported_ise
+
+JsonSchemaValidationError = imported_jsve
+InvalidSchemaError = imported_ise
 
 class Validator(Draft6Validator):
 

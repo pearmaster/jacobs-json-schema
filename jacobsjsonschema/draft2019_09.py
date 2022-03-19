@@ -1,8 +1,12 @@
 
 from typing import Optional, List
 
-from .draft4 import InvalidSchemaError, JsonSchemaValidationError as imported_jsve, JsonTypes
-from .draft7 import Validator as Draft7Validator
+from .json_types import JsonTypes
+from .draft7 import Validator as Draft7Validator, InvalidSchemaError as imported_ise, JsonSchemaValidationError as imported_jsve
+
+InvalidSchemaError = imported_ise
+JsonSchemaValidationError = imported_jsve
+
 
 JsonSchemaValidationError = imported_jsve
 
