@@ -1,5 +1,7 @@
 # Standalone Mode
 
+"Standalone mode" means using `jacobs-json-schema` in a way that doesn't require dependencies to provide the most common JSON Schema functionality.
+
 ## Dependencies
 
 In standalone mode, there aren't any dependencies.  Everything is implemented in pure Python3.
@@ -19,6 +21,8 @@ In stand alone mode, the caller does all JSON parsing and passes Python structur
 The example, doesn't use any JSON at all.  It only uses Python structures.
 
 ```py
+from jacobsjsonschema.draft4 import Validator
+
 schema = { "type": "string" }
 validator = Validator(schema, lazy_error_reporting=True)
 
@@ -32,6 +36,7 @@ else:
 But we could do something similar that includes JSON parsing.
 
 ```py
+from jacobsjsonschema.draft6 import Validator
 import json
 
 json_schema_text = '{ "type": "string" }'
@@ -74,6 +79,7 @@ def load_file(uri: str) -> dict:
 The file loading function needs to be provided to the validator.  That can be accomplished by calling the `set_file_loader(Callable[[str],dict]):` method on the validator like this:
 
 ```py
+from jacobsjsonschema.draft7 import Validator
 import json
 
 def load_file(uri: str) -> dict:
