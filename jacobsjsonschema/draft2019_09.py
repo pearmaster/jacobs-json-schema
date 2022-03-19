@@ -1,8 +1,10 @@
 
 from typing import Optional, List
 
-from .draft4 import InvalidSchemaError, JsonSchemaValidationError, JsonTypes
+from .draft4 import InvalidSchemaError, JsonSchemaValidationError as imported_jsve, JsonTypes
 from .draft7 import Validator as Draft7Validator
+
+JsonSchemaValidationError = imported_jsve
 
 class Validator(Draft7Validator):
 
@@ -11,7 +13,7 @@ class Validator(Draft7Validator):
         del self.array_validators['contains']
 
         del self.object_validators['dependencies']
-        self.object_validators.extend({
+        self.object_validators.update({
             "dependentRequired": self._validate_dependency,
             "dependentSchemas": self._validate_dependency,
         })
@@ -58,3 +60,4 @@ class Validator(Draft7Validator):
                 min_contains = schema['minContains'] if 'minContains' in schema else 1
                 retval = self._validate_contains(data, schema['contains'], min_contains, max_contains) and retval
         return retval
+    
