@@ -1,5 +1,5 @@
 
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 import re
 
 from .json_types import JsonTypes
@@ -9,8 +9,10 @@ InvalidSchemaError = imported_ise
 JsonSchemaValidationError = imported_jsve
 
 class PropName(str):
-    def __new__(cls, *args, **kwargs):
-        obj = str.__new__(cls, *args, **kwargs)
+    def __new__(cls, the_string):
+        if isinstance(the_string, cls):
+            return the_string
+        obj = str.__new__(cls, the_string)
         obj._evaluated = False
         return obj
 
@@ -105,7 +107,6 @@ class Validator(Draft7Validator):
         return retval
 
     def _object_validate(self, data:dict, schema:dict) -> bool:
-
         new_data = dict()
         for propname, propval in data.items():
             new_data[PropName(propname)] = propval
@@ -131,5 +132,15 @@ class Validator(Draft7Validator):
             for propname, propvalue in data.items():
                 if not propname.evaluated:
                     retval = retval and self.validate(propvalue, schema['unevaluatedProperties'])
+                    propname.evaluated = True
 
         return retval
+
+    def _validate(self, data:JsonTypes, schema:Union[dict,bool]) -> bool:
+        if isinstance(data, dict):
+            new_data = dict()
+            for propname, propval in data.items():
+                new_data[PropName(propname)] = propval
+            data = new_data
+
+        return super()._validate(data, schema)

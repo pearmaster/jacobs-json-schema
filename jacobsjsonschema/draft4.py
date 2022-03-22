@@ -261,7 +261,7 @@ class Validator(object):
             raise InvalidSchemaError("AnyOf schema was not a list")
         retval = True
         for schema in schemas:
-            retval = self.validate(data, schema) and retval
+            retval = self._validate(data, schema) and retval
         return retval
 
     def _validate_not(self, data:JsonTypes, schema:dict) -> bool:
