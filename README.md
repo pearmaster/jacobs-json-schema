@@ -3,6 +3,7 @@
 [![CircleCI](https://circleci.com/gh/pearmaster/jacobs-json-schema/tree/main.svg?style=svg)](https://circleci.com/gh/pearmaster/jacobs-json-schema/tree/main) 
 [![Coverage Status](https://coveralls.io/repos/github/pearmaster/jacobs-json-schema/badge.svg?branch=main)](https://coveralls.io/github/pearmaster/jacobs-json-schema?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/jacobs-json-schema/badge/?version=latest)](https://jacobs-json-schema.readthedocs.io/en/latest/?badge=latest)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/pearmaster/jacobs-json-schema.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/pearmaster/jacobs-json-schema/context:python)
 
 
 This package is yet another JSON Schema validator.  I wrote it because I needed something small to run in Python 3.5. 
