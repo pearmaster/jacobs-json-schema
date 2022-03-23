@@ -107,11 +107,6 @@ class Validator(Draft7Validator):
         return retval
 
     def _object_validate(self, data:dict, schema:dict) -> bool:
-        new_data = dict()
-        for propname, propval in data.items():
-            new_data[PropName(propname)] = propval
-        data = new_data
-
         retval = True
 
         for k, validator_func in self.object_validators.items():
@@ -137,10 +132,20 @@ class Validator(Draft7Validator):
         return retval
 
     def _validate(self, data:JsonTypes, schema:Union[dict,bool]) -> bool:
+        local_data = data
         if isinstance(data, dict):
-            new_data = dict()
+            local_data = dict()
             for propname, propval in data.items():
-                new_data[PropName(propname)] = propval
-            data = new_data
+                local_data[PropName(str(propname))] = propval
 
-        return super()._validate(data, schema)
+        retval = super()._validate(local_data, schema)
+
+        if isinstance(local_data, dict):
+            # Transfer evaluated properties back to the original properties
+            for pn in local_data.keys():
+                if pn.evaluated:
+                    for k in data.keys():
+                        if k == pn and hasattr(k, "evaluated"):
+                            k.evaluated = True
+        
+        return retval
