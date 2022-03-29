@@ -1,7 +1,7 @@
 image:
   file: .gitpod.Dockerfile
 tasks:
-  - init: pip install -r requirements-dev.txt
+  - init: python3 -m pip install -r requirements-dev.txt
     command: /workspace/.pip-modules/bin/mkdocs serve --dev-addr 0.0.0.0:8000
 vscode:
   extensions:
