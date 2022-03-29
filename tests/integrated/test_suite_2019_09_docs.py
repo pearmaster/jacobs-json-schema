@@ -9,7 +9,7 @@ import sys
 
 if sys.version_info.minor >= 7:
     from jacobsjsondoc.document import create_document
-    from jacobsjsondoc.options import JsonSchemaParseOptions
+    from jacobsjsondoc.options import JsonSchemaParseOptions, RefResolutionMode
 
 from ..context import jacobsjsonschema
 from .test_suite_4_docs import UnitTestFileLoader
@@ -27,17 +27,20 @@ def pytest_generate_tests(metafunc):
 
         testfile_dir = testsuite_dir / "tests" / "draft2019-09"
 
-        for testfile in testfile_dir.glob("*.json"):
+        for testfile in testfile_dir.glob("unevaluatedProperties.json"):
 
             with open(testfile, "r") as test_file:
                 test_cases = json.load(test_file)
                 print(testfile)
 
             for test_case in test_cases:
+                if test_case['description'] != "unevaluatedProperties with $ref":
+                    continue
                 ppl = UnitTestFileLoader()
                 ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
                 options = JsonSchemaParseOptions()
                 options.dollar_id_token = Validator.get_dollar_id_token()
+                options.ref_resolution_mode = RefResolutionMode.RESOLVE_REF_PROPERTIES
                 doc = create_document(os.path.basename(testfile), loader=ppl, options=options)
                 
                 for test in test_case['tests']:

@@ -3,7 +3,6 @@ output/
 *.egg-info/
 dist/
 build/
-.vscode/
 *~
 *.pyc
 .DS_Store

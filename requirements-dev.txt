@@ -1,4 +1,4 @@
-jacobs-json-doc==0.14.*
+jacobs-json-doc==0.16.*
 pytest
 requests
 mkdocs
