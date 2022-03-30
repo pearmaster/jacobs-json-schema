@@ -1,5 +1,5 @@
 jacobs-json-doc
---index-url https://test.pypi.org/simple/ jacobs-json-doc==0.16.*
 pytest
 requests
 mkdocs
+--index-url https://test.pypi.org/simple/ jacobs-json-doc==0.16.1

@@ -34,8 +34,6 @@ def pytest_generate_tests(metafunc):
                 print(testfile)
 
             for test_case in test_cases:
-                if test_case['description'] != "unevaluatedProperties with $ref":
-                    continue
                 ppl = UnitTestFileLoader()
                 ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
                 options = JsonSchemaParseOptions()

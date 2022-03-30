@@ -57,7 +57,30 @@ class Validator(Draft7Validator):
             if not self._format_validators[format](data):
                 self._report_format_warning(data, format)
         return True
-    
+
+    def _validate_anyof(self, data:JsonTypes, schemas:list) -> bool:
+        retval = False
+        if not isinstance(schemas, list):
+            raise InvalidSchemaError("AnyOf schema was not a list")
+        for schema in schemas:
+            try:
+                self._temp_ignore_errors = True
+                if self.validate(data, schema):
+                    self._temp_ignore_errors = False
+                    retval = True
+                    continue # Because we need to check of unevaluated properties, we need to run validation on all elements.
+            except InvalidSchemaError:
+                raise
+            except JsonSchemaValidationError:
+                pass
+            except Exception:
+                raise
+            finally:
+                self._temp_ignore_errors = False
+        if retval:
+            return True
+        return self._report_validation_error("The JSON data did not match any of the provided anyOf schemas", data, schemas)
+
     def _validate_contains(self, data:List[JsonTypes], schema:dict, min_contains:int=1, max_contains:Optional[int]=None) -> bool:
         occurances = self._contains_count(data, schema)
         if max_contains is None:
@@ -105,6 +128,23 @@ class Validator(Draft7Validator):
                     retval = retval and self.validate(v, subschema)
                     k.evaluated = True
         return retval
+
+    def _validate_required(self, data:dict, schema:List[str]) -> bool:
+        if not isinstance(data, dict):
+            return self._report_validation_error("Required schema requires an object", data, schema)
+        if not isinstance(schema, list):
+            raise InvalidSchemaError("Required must be a list of property names")
+        for item in schema:
+            if not isinstance(item, str):
+                raise InvalidSchemaError("Required property name must be a string")
+            if item not in data:
+                return self._report_validation_error("The '{}' property is required but was missing".format(item), data, schema)
+            else:
+                for k in data.keys():
+                    if k == item:
+                        k.evaluated = True
+                        break
+        return True
 
     def _object_validate(self, data:dict, schema:dict) -> bool:
         retval = True
