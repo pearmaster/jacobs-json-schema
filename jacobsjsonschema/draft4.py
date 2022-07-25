@@ -461,17 +461,15 @@ class Validator(object):
     def _value_validate(self, data:Union[int,float,str,None], schema:dict) -> bool:
         retval = True
         if 'maximum' in schema:
-            if data is None or isinstance(data, str):
-                retval = self._report_validation_error("Attempt to apply 'maximum' to non-numeric value", data, schema['maximum'])
-            else:
+            if isinstance(data, int) or isinstance(data, float):
                 exclusive = schema['exclusiveMaximum'] if 'exclusiveMaximum' in schema else False
                 retval = self._validate_maximum(data, schema['maximum'], exclusive=exclusive) and retval
+            # According to the spec, ignore non-numeric data
         if 'minimum' in schema:
-            if data is None or isinstance(data, str):
-                retval = self._report_validation_error("Attempt to apply 'minimum' to non-numeric value", data, schema['minimum'])
-            else:
+            if isinstance(data, int) or isinstance(data, float):
                 exclusive = schema['exclusiveMinimum'] if 'exclusiveMinimum' in schema else False
                 retval = self._validate_minimum(data, schema['minimum'], exclusive=exclusive) and retval
+            # According to the spec, ignore non-numeric data
         for k, validator_func in self.value_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
