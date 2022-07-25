@@ -2,3 +2,4 @@ jacobs-json-doc==0.14.*
 pytest
 requests
 mkdocs
+mypy

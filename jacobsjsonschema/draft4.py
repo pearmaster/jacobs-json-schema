@@ -46,12 +46,12 @@ class Validator(object):
         }
         self._format_validators = {
             'date-time': self._is_format_datetime
-        }
+        } # type: Dict[str, Callable[[Union[str, int, float]],bool]]
         self._root_schema = schema
-        self._file_loader = None
+        self._file_loader = None # type: Optional[Callable[[str],dict]]
         self._temp_ignore_errors = False
         self._lazy_error_reporting = lazy_error_reporting
-        self._errors = []
+        self._errors = [] # type: List[str]
 
     @staticmethod
     def get_dollar_id_token() -> str:
@@ -461,11 +461,17 @@ class Validator(object):
     def _value_validate(self, data:Union[int,float,str,None], schema:dict) -> bool:
         retval = True
         if 'maximum' in schema:
-            exclusive = schema['exclusiveMaximum'] if 'exclusiveMaximum' in schema else False
-            retval = self._validate_maximum(data, schema['maximum'], exclusive=exclusive) and retval
+            if data is None or isinstance(data, str):
+                retval = self._report_validation_error("Attempt to apply 'maximum' to non-numeric value", data, schema['maximum'])
+            else:
+                exclusive = schema['exclusiveMaximum'] if 'exclusiveMaximum' in schema else False
+                retval = self._validate_maximum(data, schema['maximum'], exclusive=exclusive) and retval
         if 'minimum' in schema:
-            exclusive = schema['exclusiveMinimum'] if 'exclusiveMinimum' in schema else False
-            retval = self._validate_minimum(data, schema['minimum'], exclusive=exclusive) and retval
+            if data is None or isinstance(data, str):
+                retval = self._report_validation_error("Attempt to apply 'minimum' to non-numeric value", data, schema['minimum'])
+            else:
+                exclusive = schema['exclusiveMinimum'] if 'exclusiveMinimum' in schema else False
+                retval = self._validate_minimum(data, schema['minimum'], exclusive=exclusive) and retval
         for k, validator_func in self.value_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval
