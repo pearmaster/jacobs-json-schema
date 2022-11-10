@@ -5,8 +5,11 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 install_requires = []
-with open("requirements.txt", "r") as fh:
-    install_requires = [ x for x in fh.read().split("\n") if len(x) > 0 ]
+try:
+    with open("requirements.txt", "r") as fh:
+        install_requires = [ x for x in fh.read().split("\n") if len(x) > 0 ]
+except FileNotFoundError:
+    pass
 
 setup(
     name="jacobs-json-schema",
@@ -20,9 +23,18 @@ setup(
     license='MIT',
     packages=find_packages(),
     install_requires=install_requires,
-    keywords='conversion',
+    keywords=['json schema', 'validation', 'data validation', 'json'],
     classifiers= [
-        "Programming Language :: Python :: 3",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     python_requires='>=3.5',
 )

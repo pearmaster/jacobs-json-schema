@@ -138,6 +138,30 @@ jobs:
           name: Coveralls
       - store_test_results:
           path: /tmp/testresults.xml
+  unittests_3_11:
+    executor:
+      name: python/default
+      tag: "3.11"
+    steps:
+      - git/checkout-with-submodules
+      - python/install-packages:
+          pkg-manager: pip
+      - python/install-packages:
+          pkg-manager: pip
+          args: pytest-cov coveralls
+      - python/install-packages:
+          pip-dependency-file: requirements-dev.txt
+          pkg-manager: pip
+      - run:
+          command: |
+            pytest --cov=jacobsjsonschema --junitxml=/tmp/testresults.xml tests
+          name: Test
+      - run:
+          command: |
+            coveralls
+          name: Coveralls
+      - store_test_results:
+          path: /tmp/testresults.xml
   test_publish:
     executor: python/default
     steps:
@@ -165,6 +189,7 @@ workflows:
       - unittests_3_8
       - unittests_3_9
       - unittests_3_10
+      - unittests_3_11
       - standalone_unittests_pypy_3_8
       - standalone_unittests_pypy_3_7
       - test_publish:
@@ -177,6 +202,7 @@ workflows:
             - unittests_3_8
             - unittests_3_9
             - unittests_3_10
+            - unittests_3_11
           filters:
             branches:
               only: next
@@ -190,6 +216,7 @@ workflows:
             - unittests_3_8
             - unittests_3_9
             - unittests_3_10
+            - unittests_3_11
           filters:
             branches:
               only: main
