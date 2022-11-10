@@ -61,4 +61,4 @@ Where "Mostly" is specified, it passes all tests excluding those from `ref.json`
 
 ## License
 
-GPLv2.  If you modify the source, please publish your modifications.  
+MIT License.  If you modify the source, please publish your modifications.  

@@ -17,7 +17,7 @@ setup(
     author="Jacob Brunson",
     author_email="pypi@jacobbrunson.com",
     url="https://github.com/pearmaster/jacobs-json-schema",
-    license='GPLv2',
+    license='MIT',
     packages=find_packages(),
     install_requires=install_requires,
     keywords='conversion',

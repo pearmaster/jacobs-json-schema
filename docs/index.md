@@ -1,6 +1,6 @@
 # Overview
 
-## JSON Schema
+## Introduction to the JSON Schema standard 
 
 JSON Schema is a way of validating that a JSON structure has a particular form. 
 
@@ -24,4 +24,4 @@ There are other python libraries that do JSON Schema validation.  This project a
 
 ## Open Source
 
-The project is open source licensed with GPLv2.  Contributions can be made through the [GitHub site](https://github.com/pearmaster/jacobs-json-schema). 
+The project is open source MIT licensed.  Contributions can be made through the [GitHub site](https://github.com/pearmaster/jacobs-json-schema). 
