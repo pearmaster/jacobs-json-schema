@@ -1,13 +1,8 @@
 from typing import Union, List, Dict
 from math import modf
 
-from .draft4 import (
-    Validator as Draft4Validator,
-    JsonSchemaValidationError,
-    InvalidSchemaError,
-)
+from .draft4 import Validator as Draft4Validator, JsonSchemaValidationError, InvalidSchemaError
 from .json_types import JsonTypes
-
 
 class Validator(Draft4Validator):
 
