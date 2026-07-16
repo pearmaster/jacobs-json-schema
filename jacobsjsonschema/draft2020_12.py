@@ -1,6 +1,7 @@
 from typing import Optional, List
 
-from .draft4 import InvalidSchemaError, JsonSchemaValidationError, JsonTypes
+from .draft4 import InvalidSchemaError, JsonSchemaValidationError
+from .json_types import JsonTypes
 from .draft2019_09 import Validator as Draft201909Validator
 
 class Validator(Draft201909Validator):

@@ -1,7 +1,8 @@
 
 from typing import Optional, Union
 
-from .draft4 import InvalidSchemaError, JsonSchemaValidationError, JsonTypes
+from .draft4 import InvalidSchemaError, JsonSchemaValidationError
+from .json_types import JsonTypes
 from .draft6 import Validator as Draft6Validator
 
 class Validator(Draft6Validator):
