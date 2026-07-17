@@ -22,13 +22,13 @@ class Validator(Draft6Validator):
         except InvalidSchemaError:
             raise
         except JsonSchemaValidationError:
-            if else_schema:
+            if else_schema is not None:
                 return self.validate(data, else_schema)
             return True
         except Exception:
             raise
         else:
-            if then_schema:
+            if then_schema is not None:
                 return self.validate(data, then_schema)
             return True
 

@@ -52,10 +52,10 @@ Where "Mostly" is specified, it passes all tests excluding those from `ref.json`
 
 | Specification | Standalone | using jacobs-json-doc |
 |---------------|------------|-----------------------|
-| Python Version| 3.5+       | 3.7+                  |
-| Draft-04      | Mostly     | Some failures                |
-| Draft-06      | Mostly     | Some failures                |
-| Draft-07      | Mostly     | Some failures                |
+| Python Version| 3.7+       | 3.12+                 |
+| Draft-04      | Mostly     | Passes                |
+| Draft-06      | Mostly     | Passes                |
+| Draft-07      | Mostly     | Passes                |
 | Draft-2019-09 | Untested   | Untested              |
 | Draft-2020-12 | Untested   | Untested              |
 

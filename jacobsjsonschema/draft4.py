@@ -377,8 +377,12 @@ class Validator(object):
         )
 
     def _validate_minlength(self, data: str, length: int) -> bool:
-        if not isinstance(length, int):
+        if isinstance(length, bool) or not isinstance(length, (int, float)):
             raise InvalidSchemaError("The minLength value must be an integer")
+        if isinstance(length, float):
+            if not length.is_integer():
+                raise InvalidSchemaError("The minLength value must be an integer")
+            length = int(length)
         if not isinstance(data, str):
             # minLength ignores non-strings per spec
             return True
@@ -393,8 +397,12 @@ class Validator(object):
         return True
 
     def _validate_maxlength(self, data: str, length: int) -> bool:
-        if not isinstance(length, int):
+        if isinstance(length, bool) or not isinstance(length, (int, float)):
             raise InvalidSchemaError("The maxLength value must be an integer")
+        if isinstance(length, float):
+            if not length.is_integer():
+                raise InvalidSchemaError("The maxLength value must be an integer")
+            length = int(length)
         if not isinstance(data, str):
             # MaxLength ignores non-strings per spec
             return True
