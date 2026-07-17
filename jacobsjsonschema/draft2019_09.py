@@ -1,6 +1,5 @@
 from typing import Optional, List
 
-from .draft4 import InvalidSchemaError, JsonSchemaValidationError
 from .json_types import JsonTypes
 from .draft7 import Validator as Draft7Validator
 
@@ -21,14 +20,6 @@ class Validator(Draft7Validator):
 
         self._warnings: List[str] = []
 
-        del self.object_validators['dependencies']
-        self.object_validators.update({
-            "dependentRequired": self._validate_dependency,
-            "dependentSchemas": self._validate_dependency,
-        })
-        
-        self._warnings = []
-    
     def get_warnings(self):
         return self._warnings
 
