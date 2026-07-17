@@ -11,7 +11,7 @@ if sys.version_info.minor >= 7:
     from jacobsjsondoc.document import create_document  # type: ignore[import-untyped]
     from jacobsjsondoc.options import JsonSchemaParseOptions  # type: ignore[import-untyped]
 
-from .test_suite_4_docs import UnitTestFileLoader
+from .test_suite_4_docs import UnitTestFileFetcher
 
 from jacobsjsonschema.draft7 import Validator
 from jacobsjsonschema import draft4
@@ -35,14 +35,13 @@ def pytest_generate_tests(metafunc):
                 print(testfile)
 
             for test_case in test_cases:
-                ppl = UnitTestFileLoader()
+                ppl = UnitTestFileFetcher()
                 ppl.prepopulate(
                     os.path.basename(testfile), json.dumps(test_case["schema"])
                 )
-                options = JsonSchemaParseOptions()
-                options.dollar_id_token = Validator.get_dollar_id_token()
+                options = JsonSchemaParseOptions(dialect="draft-07")
                 doc = create_document(
-                    os.path.basename(testfile), loader=ppl, options=options
+                    os.path.basename(testfile), fetcher=ppl, options=options
                 )
 
                 for test in test_case["tests"]:

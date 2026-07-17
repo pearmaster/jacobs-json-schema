@@ -363,32 +363,10 @@ class Validator(object):
     def _validate_enum(self, data: JsonTypes, schema: List[JsonTypes]) -> bool:
         if not isinstance(schema, list):
             raise InvalidSchemaError("The enum restriction must be a list of values")
-        if isinstance(data, bool):
-            if data:
-                for x in schema:
-                    if x is True:
-                        return True
-            else:
-                for x in schema:
-                    if x is False:
-                        return True
-        elif isinstance(data, float):
-            for x in schema:
-                if (
-                    (isinstance(x, int) or isinstance(x, float))
-                    and not isinstance(x, bool)
-                ) and data == float(x):
-                    return True
-        elif isinstance(data, int):
-            for x in schema:
-                if (
-                    isinstance(x, float)
-                    or isinstance(x, int)
-                    and not isinstance(x, bool)
-                ) and data == int(x):
-                    return True
-        elif data in schema:
-            return True
+        fixed_data = replace_bools_for_comparison(data)
+        for x in schema:
+            if fixed_data == replace_bools_for_comparison(x):
+                return True
 
         return self._report_validation_error(
             "The value '{}' was not in the enumerated list of allowed values".format(

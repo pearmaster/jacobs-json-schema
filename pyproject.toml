@@ -47,6 +47,6 @@ dev = [
     "mypy",
     "pytest",
     "ruff",
-    "jacobs-json-doc==0.14.*",
+    "jacobs-json-doc~=0.17.0; python_version >= '3.12'",
     "requests",
 ]
