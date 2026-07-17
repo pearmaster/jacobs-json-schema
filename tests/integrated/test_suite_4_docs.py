@@ -8,7 +8,7 @@ import json
 import sys
 
 if sys.version_info.minor >= 7:
-    from jacobsjsondoc.loader import PrepopulatedLoader  # type: ignore[import-untyped]
+    from jacobsjsondoc.fetcher import PrepopulatedFetcher # type: ignore[import-untyped]
     from jacobsjsondoc.document import create_document  # type: ignore[import-untyped]
     from jacobsjsondoc.options import JsonSchemaParseOptions  # type: ignore[import-untyped]
     import requests
@@ -19,9 +19,9 @@ from jacobsjsonschema import draft4
 testsuite_dir = pathlib.Path(__file__).parent.parent / "JSON-Schema-Test-Suite"
 
 
-class UnitTestFileLoader(PrepopulatedLoader):
+class UnitTestFileFetcher(PrepopulatedFetcher):
 
-    def load(self, uri: str) -> str:
+    def fetch(self, uri: str) -> str:
         if uri.startswith("http://json-schema.org"):
             r = requests.get(uri)
             return r.text
@@ -49,14 +49,13 @@ def pytest_generate_tests(metafunc):
                 test_cases = json.load(test_file)
 
             for test_case in test_cases:
-                ppl = UnitTestFileLoader()
+                ppl = UnitTestFileFetcher()
                 ppl.prepopulate(
                     os.path.basename(testfile), json.dumps(test_case["schema"])
                 )
-                options = JsonSchemaParseOptions()
-                options.dollar_id_token = Validator.get_dollar_id_token()
+                options = JsonSchemaParseOptions(dialect="draft-04")
                 doc = create_document(
-                    os.path.basename(testfile), loader=ppl, options=options
+                    os.path.basename(testfile), fetcher=ppl, options=options
                 )
 
                 for test in test_case["tests"]:
