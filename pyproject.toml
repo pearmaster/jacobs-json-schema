@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jacobs-json-schema"
+version = "0.5.0"
+description = "Another JSON-Schema Validator"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.7"
+authors = [
+    { name = "Jacob Brunson", email = "pypi@jacobbrunson.com" },
+]
+keywords = ["json schema", "validation", "data validation", "json"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[tool.black]
+target-version = ["py37"]
+
+[project.urls]
+Homepage = "https://github.com/pearmaster/jacobs-json-schema"
+
+[project.optional-dependencies]
+docs = [
+    "mkdocs==1.4.*",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["jacobsjsonschema"]
+
+[dependency-groups]
+dev = [
+    "black",
+    "mypy",
+    "pytest",
+    "ruff",
+    "jacobs-json-doc==0.14.*",
+    "requests",
+]
