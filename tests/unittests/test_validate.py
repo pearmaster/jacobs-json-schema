@@ -1,8 +1,8 @@
 import unittest
 
-from ..context import jacobsjsonschema
 
 from jacobsjsonschema.draft4 import Validator
+
 
 class TestValidate(unittest.TestCase):
 
@@ -23,19 +23,11 @@ class TestValidate(unittest.TestCase):
                     "maxLength": 10,
                     "minLength": 1,
                 },
-                "bar": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "maximum": 10
-                }
+                "bar": {"type": "integer", "minimum": 1, "maximum": 10},
             },
             "required": ["foo"],
-            "anyOf": [
-                {"type": "object"}
-            ],
-            "allOf": [
-                {"type": "object"}
-            ],
+            "anyOf": [{"type": "object"}],
+            "allOf": [{"type": "object"}],
             "oneOf": [
                 {"type": "string"},
                 {"type": "object"},

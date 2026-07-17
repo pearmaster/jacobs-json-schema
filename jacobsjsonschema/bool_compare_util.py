@@ -1,15 +1,13 @@
-
 class TrueClass:
-    
+
     def __eq__(self, other):
-        return type(self) == type(other)
+        return type(self) is type(other)
 
 
 class FalseClass:
-    
-    def __eq__(self, other):
-        return type(self) == type(other)
 
+    def __eq__(self, other):
+        return type(self) is type(other)
 
 
 def replace_bools_for_comparison(data):
@@ -20,7 +18,7 @@ def replace_bools_for_comparison(data):
         return new_list
     elif isinstance(data, dict):
         new_dict = {}
-        for k,v in data.items():
+        for k, v in data.items():
             new_dict[k] = replace_bools_for_comparison(v)
         return new_dict
     elif data is True:

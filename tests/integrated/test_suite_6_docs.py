@@ -8,18 +8,19 @@ import json
 import sys
 
 if sys.version_info.minor >= 7:
-    from jacobsjsondoc.document import create_document
-    from jacobsjsondoc.options import JsonSchemaParseOptions
+    from jacobsjsondoc.document import create_document  # type: ignore[import-untyped]
+    from jacobsjsondoc.options import JsonSchemaParseOptions  # type: ignore[import-untyped]
 
-from ..context import jacobsjsonschema
 from .test_suite_4_docs import UnitTestFileLoader
 
 from jacobsjsonschema.draft6 import Validator
+from jacobsjsonschema import draft4
 
-testsuite_dir = pathlib.Path(__file__).parent.parent / 'JSON-Schema-Test-Suite'
+testsuite_dir = pathlib.Path(__file__).parent.parent / "JSON-Schema-Test-Suite"
+
 
 def pytest_generate_tests(metafunc):
-    argnames = ('schema', 'data', 'valid')
+    argnames = ("schema", "data", "valid")
     argvalues = []
     testids = []
 
@@ -35,16 +36,23 @@ def pytest_generate_tests(metafunc):
 
             for test_case in test_cases:
                 ppl = UnitTestFileLoader()
-                ppl.prepopulate(os.path.basename(testfile), json.dumps(test_case["schema"]))
+                ppl.prepopulate(
+                    os.path.basename(testfile), json.dumps(test_case["schema"])
+                )
                 options = JsonSchemaParseOptions()
                 options.dollar_id_token = Validator.get_dollar_id_token()
-                doc = create_document(os.path.basename(testfile), loader=ppl, options=options)
-                
-                for test in test_case['tests']:
-                    testids.append(f"{os.path.splitext(os.path.basename(testfile))[0]} -> {test_case['description']} -> {test['description']}")
-                    argvalues.append(pytest.param(doc, test['data'], test['valid']))
+                doc = create_document(
+                    os.path.basename(testfile), loader=ppl, options=options
+                )
+
+                for test in test_case["tests"]:
+                    testids.append(
+                        f"{os.path.splitext(os.path.basename(testfile))[0]} -> {test_case['description']} -> {test['description']}"
+                    )
+                    argvalues.append(pytest.param(doc, test["data"], test["valid"]))
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
+
 
 def test_d6_doc(schema, data, valid):
     if sys.version_info.minor < 7:
@@ -53,5 +61,5 @@ def test_d6_doc(schema, data, valid):
     if valid:
         assert validator.validate(data) == valid
     else:
-        with pytest.raises(jacobsjsonschema.draft4.JsonSchemaValidationError):
+        with pytest.raises(draft4.JsonSchemaValidationError):
             validator.validate(data)

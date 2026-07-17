@@ -1,8 +1,8 @@
 import unittest
 
-from ..context import jacobsjsonschema
 
 from jacobsjsonschema.draft4 import Validator
+
 
 class LazyMixin:
 
@@ -14,10 +14,7 @@ class LazyMixin:
 class TestLazyReporting(unittest.TestCase, LazyMixin):
 
     def setUp(self):
-        self.data = {
-            "foo": "one",
-            "bar": 2
-        }
+        self.data = {"foo": "one", "bar": 2}
         self.schema = {
             "type": "object",
             "properties": {
@@ -26,10 +23,10 @@ class TestLazyReporting(unittest.TestCase, LazyMixin):
                 },
                 "bar": {
                     "type": "string",
-                }
-            }
+                },
+            },
         }
-        
+
     def test_number_of_errors(self):
         validator = Validator(self.schema, lazy_error_reporting=True)
         validator.validate(self.data)
@@ -39,12 +36,12 @@ class TestLazyReporting(unittest.TestCase, LazyMixin):
 class TestLazyReportingOfAdditionalItems(unittest.TestCase, LazyMixin):
 
     def setUp(self):
-        self.schema = {'additionalItems': {'type': 'integer'}, 'items': [{}]}
-        self.data = [None, 2, 3, 'foo']
+        self.schema = {"additionalItems": {"type": "integer"}, "items": [{}]}
+        self.data = [None, 2, 3, "foo"]
 
 
 class TestLazyReportingOfAllOf(unittest.TestCase, LazyMixin):
 
     def setUp(self):
-        self.schema = {'allOf': [{'maximum': 30}, {'minimum': 20}]}
+        self.schema = {"allOf": [{"maximum": 30}, {"minimum": 20}]}
         self.data = 35

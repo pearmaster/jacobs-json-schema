@@ -1,0 +1,26 @@
+version: '3'
+
+tasks:
+  ruff:
+    desc: Run ruff linter
+    cmd: uv run ruff check .
+
+  black:
+    desc: Run black formatter check
+    cmd: uv run black --check --target-version py37 .
+
+  mypy:
+    desc: Run mypy type checker
+    cmd: uv run mypy .
+
+  test:
+    desc: Run all tests
+    cmd: uv run pytest
+
+  all:
+    desc: Run all checks and tests
+    cmds:
+      - task: ruff
+      - task: black
+      - task: mypy
+      - task: test
