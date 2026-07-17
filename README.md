@@ -1,6 +1,6 @@
 # jacobs-json-schema
 
-[![CircleCI](https://circleci.com/gh/pearmaster/jacobs-json-schema/tree/main.svg?style=svg)](https://circleci.com/gh/pearmaster/jacobs-json-schema/tree/main) 
+[![CI](https://github.com/pearmaster/jacobs-json-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/pearmaster/jacobs-json-schema/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/pearmaster/jacobs-json-schema/badge.svg?branch=main)](https://coveralls.io/github/pearmaster/jacobs-json-schema?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/jacobs-json-schema/badge/?version=latest)](https://jacobs-json-schema.readthedocs.io/en/latest/?badge=latest)
 
