@@ -8,33 +8,15 @@ import json
 import sys
 
 if sys.version_info.minor >= 7:
-    from jacobsjsondoc.fetcher import PrepopulatedFetcher # type: ignore[import-untyped]
     from jacobsjsondoc.document import create_document  # type: ignore[import-untyped]
     from jacobsjsondoc.options import JsonSchemaParseOptions  # type: ignore[import-untyped]
-    import requests
 
-from jacobsjsonschema.draft4 import Validator
+from .test_suite_4_docs import UnitTestFileFetcher
+
+from jacobsjsonschema.draft2019_09 import Validator
 from jacobsjsonschema import draft4
 
 testsuite_dir = pathlib.Path(__file__).parent.parent / "JSON-Schema-Test-Suite"
-
-
-class UnitTestFileFetcher(PrepopulatedFetcher):
-
-    def fetch(self, uri: str) -> str:
-        if uri.startswith("http://json-schema.org") or uri.startswith(
-            "https://json-schema.org"
-        ):
-            r = requests.get(uri)
-            return r.text
-        elif uri.startswith("http://localhost:1234"):
-            path = uri[len("http://localhost:1234") + 1 :]
-            if "#" in path:
-                path = path.split("#")[0]
-            filepath = os.path.join(testsuite_dir, "remotes", path)
-            with open(filepath, "r") as fp:
-                return fp.read()
-        return self._documents[uri]
 
 
 def pytest_generate_tests(metafunc):
@@ -44,9 +26,11 @@ def pytest_generate_tests(metafunc):
 
     if sys.version_info.minor >= 6:
 
-        testfile_dir = testsuite_dir / "tests" / "draft4"
+        testfile_dir = testsuite_dir / "tests" / "draft2019-09"
 
         for testfile in testfile_dir.glob("*.json"):
+            stem = os.path.splitext(os.path.basename(testfile))[0]
+
             with open(testfile, "r") as test_file:
                 test_cases = json.load(test_file)
 
@@ -55,24 +39,23 @@ def pytest_generate_tests(metafunc):
                 ppl.prepopulate(
                     os.path.basename(testfile), json.dumps(test_case["schema"])
                 )
-                options = JsonSchemaParseOptions(dialect="draft-04")
+                options = JsonSchemaParseOptions(dialect="2019-09")
                 doc = create_document(
                     os.path.basename(testfile), fetcher=ppl, options=options
                 )
 
                 for test in test_case["tests"]:
                     testids.append(
-                        f"{os.path.splitext(os.path.basename(testfile))[0]} -> {test_case['description']} -> {test['description']}"
+                        f"{stem} -> {test_case['description']} -> {test['description']}"
                     )
                     argvalues.append(pytest.param(doc, test["data"], test["valid"]))
 
     metafunc.parametrize(argnames, argvalues, ids=testids)
 
 
-def test_d4_doc(schema, data, valid):
+def test_d2019_09_doc(schema, data, valid):
     if sys.version_info.minor < 7:
         pytest.skip()
-
     validator = Validator(schema)
     if valid:
         assert validator.validate(data) == valid
