@@ -111,26 +111,29 @@ class Validator(Draft7Validator):
     def _validate_anyof(self, data: JsonTypes, schemas: list) -> bool:
         if not isinstance(schemas, list):
             raise InvalidSchemaError("anyOf schema was not a list")
+        matched = False
         for schema in schemas:
             try:
                 self._temp_ignore_errors = True
                 if self.validate(data, schema):
                     self._temp_ignore_errors = False
                     self._merge_last_frame()
-                    return True
+                    matched = True
             except InvalidSchemaError:
                 raise
             except JsonSchemaValidationError:
-                pass
+                self._last_frame = None
             except Exception:
                 raise
             finally:
                 self._temp_ignore_errors = False
-        return self._report_validation_error(
-            "The JSON data did not match any of the provided anyOf schemas",
-            data,
-            schemas,
-        )
+        if not matched:
+            return self._report_validation_error(
+                "The JSON data did not match any of the provided anyOf schemas",
+                data,
+                schemas,
+            )
+        return True
 
     def _validate_oneof(self, data: JsonTypes, schemas: list) -> bool:
         if not isinstance(schemas, list):
@@ -287,19 +290,21 @@ class Validator(Draft7Validator):
         return retval
 
     def _object_validate(self, data: dict, schema: dict) -> bool:
-        retval = super()._object_validate(data, schema)
-        if "unevaluatedProperties" in schema:
-            if isinstance(data, dict):
+        # Don't run unevaluatedProperties here — it must run after
+        # if/then/else, which is handled in _validate (inherited from draft7).
+        return super()._object_validate(data, schema)
+
+    def _validate(self, data: JsonTypes, schema: Union[dict, bool]) -> bool:
+        retval = super()._validate(data, schema)
+        # super()._validate is draft7._validate which handles if/then/else.
+        # Run unevaluatedProperties AFTER if/then/else so its annotation
+        # collection sees the then/else branch's evaluated properties.
+        if isinstance(data, dict) and isinstance(schema, dict):
+            if "unevaluatedProperties" in schema:
                 retval = (
                     self._validate_unevaluated_properties(
                         data, schema["unevaluatedProperties"]
                     )
                     and retval
-                )
-            else:
-                retval = self._report_validation_error(
-                    "Cannot validate unevaluatedProperties on a non-object",
-                    data,
-                    schema["unevaluatedProperties"],
                 )
         return retval
