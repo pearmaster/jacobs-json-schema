@@ -1,9 +1,9 @@
-from typing import Union, List, Dict, Optional, Callable
+from typing import Union, List, Dict, Optional, Callable, Set
 
 import re
 
 from .bool_compare_util import replace_bools_for_comparison
-from .json_types import JsonTypes
+from .json_types import JsonTypes, AnnotationFrame
 
 
 class JsonSchemaValidationError(Exception):
@@ -53,6 +53,8 @@ class Validator(object):
         self._temp_ignore_errors = False
         self._lazy_error_reporting = lazy_error_reporting
         self._errors: List[str] = []
+        self._annotation_stack: List[AnnotationFrame] = []
+        self._last_frame: Optional[AnnotationFrame] = None
 
     @staticmethod
     def get_dollar_id_token() -> str:
@@ -60,6 +62,32 @@ class Validator(object):
 
     def get_errors(self) -> List[str]:
         return self._errors
+
+    def _record_evaluated_property(self, key: str) -> None:
+        """Record that a property key was evaluated by the current schema."""
+        if self._annotation_stack:
+            self._annotation_stack[-1].evaluated_property_keys.add(key)
+
+    def _record_evaluated_item(self, index: int) -> None:
+        """Record that an array item index was evaluated by the current schema."""
+        if self._annotation_stack:
+            self._annotation_stack[-1].evaluated_item_indices.add(index)
+
+    def _merge_last_frame(self) -> None:
+        """Merge the last completed frame into the current top-of-stack frame.
+
+        Used by applicators (allOf, anyOf, etc.) to propagate annotations
+        from child schemas into the parent schema's frame.
+        """
+        if self._last_frame is not None and self._annotation_stack:
+            current = self._annotation_stack[-1]
+            current.evaluated_property_keys.update(
+                self._last_frame.evaluated_property_keys
+            )
+            current.evaluated_item_indices.update(
+                self._last_frame.evaluated_item_indices
+            )
+        self._last_frame = None
 
     def add_format(
         self, name: str, validator_func: Callable[[Union[str, int, float]], bool]
@@ -168,6 +196,7 @@ class Validator(object):
         for k, v in data.items():
             if k in schema:
                 retval = self.validate(v, schema[k]) and retval
+                self._record_evaluated_property(k)
         return retval
 
     def _validate_pattern_properties(
@@ -185,6 +214,7 @@ class Validator(object):
             for k, v in data.items():
                 if pattern.search(k):
                     retval = retval and self.validate(v, subschema)
+                    self._record_evaluated_property(k)
         return retval
 
     def _validate_additional_properties(
@@ -211,6 +241,7 @@ class Validator(object):
                         if re.search(regex_expression, propname):
                             found_somewhere = True
                 if not found_somewhere:
+                    self._record_evaluated_property(propname)
                     if additional is not False and self.validate(
                         data[propname], additional  # type: ignore[arg-type]
                     ):
@@ -482,6 +513,7 @@ class Validator(object):
         retval = True
         for idx, item in enumerate(data):
             retval = self.validate(item, schema[idx]) and retval
+            self._record_evaluated_item(idx)
         return retval
 
     def _validate_items(
@@ -634,9 +666,15 @@ class Validator(object):
         retval = True
         if hasattr(schema, "_reference"):
             resolved_schema = schema.resolve()  # type: ignore[attr-defined]
-            return self.validate(data, resolved_schema) and retval
+            self._last_frame = None
+            result = self.validate(data, resolved_schema)
+            self._merge_last_frame()
+            return result and retval
         elif "$ref" in schema:
-            return self.validate_from_reference(data, schema["$ref"]) and retval
+            self._last_frame = None
+            result = self.validate_from_reference(data, schema["$ref"])
+            self._merge_last_frame()
+            return result and retval
         for k, validator_func in self.generic_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval  # type: ignore[operator]
@@ -651,4 +689,10 @@ class Validator(object):
     def validate(self, data: JsonTypes, schema: Optional[dict] = None) -> bool:
         if schema is None:
             schema = self._root_schema
-        return self._validate(data, schema)
+        frame = AnnotationFrame()
+        self._annotation_stack.append(frame)
+        try:
+            return self._validate(data, schema)
+        finally:
+            self._annotation_stack.pop()
+            self._last_frame = frame
