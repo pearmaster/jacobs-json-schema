@@ -21,7 +21,6 @@ SPECIAL_TESTS = [
     "refRemote.json",
     "vocabulary.json",
     "unevaluatedItems.json",
-    "unevaluatedProperties.json",
 ]
 
 # Individual cases that rely on annotation collection (unevaluatedItems /
