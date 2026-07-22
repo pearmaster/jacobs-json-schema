@@ -263,13 +263,22 @@ class Validator(Draft7Validator):
         if not self._annotation_stack:
             return True
 
-        # Collect evaluated keys from ALL frames on the stack.
-        # unevaluatedProperties must see annotations from ancestor schemas
-        # (e.g., a parent's `properties` keyword) as well as from sibling
-        # keywords that already ran in the current schema.
+        # Collect evaluated keys ONLY from the current (top) frame.
+        #
+        # unevaluatedProperties must see annotations from:
+        #   - Sibling keywords in the same schema (properties,
+        #     patternProperties, additionalProperties) which record into the
+        #     current frame directly.
+        #   - In-place applicator branches (allOf, anyOf, oneOf,
+        #     if/then/else, dependentSchemas, $ref) whose frames are merged
+        #     into the current frame via _merge_last_frame().
+        #
+        # It must NOT see annotations from cousin schemas (sibling branches
+        # of a parent allOf/anyOf/oneOf) — those are merged into the PARENT
+        # frame, not the current one.  Looking at ancestor frames would
+        # incorrectly expose cousin annotations.
         evaluated_keys: set = set()
-        for frame in self._annotation_stack:
-            evaluated_keys.update(frame.evaluated_property_keys)
+        evaluated_keys.update(self._annotation_stack[-1].evaluated_property_keys)
 
         retval = True
         for key in data:
@@ -306,10 +315,11 @@ class Validator(Draft7Validator):
         if not self._annotation_stack:
             return True
 
-        # Collect evaluated indices from ALL frames on the stack.
+        # Collect evaluated indices ONLY from the current (top) frame.
+        # See _validate_unevaluated_properties for the rationale: ancestor
+        # frames contain cousin annotations that must not be visible here.
         evaluated_indices: set = set()
-        for frame in self._annotation_stack:
-            evaluated_indices.update(frame.evaluated_item_indices)
+        evaluated_indices.update(self._annotation_stack[-1].evaluated_item_indices)
 
         retval = True
         for idx, item in enumerate(data):

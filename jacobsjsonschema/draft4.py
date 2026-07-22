@@ -513,7 +513,10 @@ class Validator(object):
         retval = True
         for idx, item in enumerate(data):
             retval = self.validate(item, schema[idx]) and retval
-            self._merge_last_frame()
+            # Do NOT merge the child frame here: each item is a distinct
+            # instance location, so its annotations (evaluated properties/
+            # items of the child) must not propagate into this schema's
+            # frame.  Only record that this index was evaluated.
             self._record_evaluated_item(idx)
         return retval
 
