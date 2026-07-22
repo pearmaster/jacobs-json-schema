@@ -56,8 +56,8 @@ Where "Mostly" is specified, it passes all tests excluding those from `ref.json`
 | Draft-04      | Mostly     | Passes                |
 | Draft-06      | Mostly     | Passes                |
 | Draft-07      | Mostly     | Passes                |
-| Draft-2019-09 | Untested   | Untested              |
-| Draft-2020-12 | Untested   | Untested              |
+| Draft-2019-09 | Untested   | 1238/1259 Passed      |
+| Draft-2020-12 | Untested   | 1153/1299 Passed      |
 
 ## License
 
