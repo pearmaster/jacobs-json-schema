@@ -294,16 +294,57 @@ class Validator(Draft7Validator):
         # if/then/else, which is handled in _validate (inherited from draft7).
         return super()._object_validate(data, schema)
 
+    # ------------------------------------------------------------------ #
+    # unevaluatedItems                                                    #
+    # ------------------------------------------------------------------ #
+
+    def _validate_unevaluated_items(
+        self, data: list, schema: Union[dict, bool]
+    ) -> bool:
+        if not isinstance(data, list):
+            return True
+        if not self._annotation_stack:
+            return True
+
+        # Collect evaluated indices from ALL frames on the stack.
+        evaluated_indices: set = set()
+        for frame in self._annotation_stack:
+            evaluated_indices.update(frame.evaluated_item_indices)
+
+        retval = True
+        for idx, item in enumerate(data):
+            if idx not in evaluated_indices:
+                self._record_evaluated_item(idx)
+                if not self.validate(item, schema):
+                    retval = (
+                        self._report_validation_error(
+                            "Item at index {} is unevaluated and didn't match "
+                            "the unevaluatedItems schema".format(idx),
+                            item,
+                            schema,
+                        )
+                        and retval
+                    )
+        return retval
+
     def _validate(self, data: JsonTypes, schema: Union[dict, bool]) -> bool:
         retval = super()._validate(data, schema)
         # super()._validate is draft7._validate which handles if/then/else.
-        # Run unevaluatedProperties AFTER if/then/else so its annotation
-        # collection sees the then/else branch's evaluated properties.
-        if isinstance(data, dict) and isinstance(schema, dict):
-            if "unevaluatedProperties" in schema:
+        # Run unevaluatedProperties/unevaluatedItems AFTER if/then/else so
+        # their annotation collection sees the then/else branch's evaluated
+        # properties/items.
+        if isinstance(schema, dict):
+            if isinstance(data, dict) and "unevaluatedProperties" in schema:
                 retval = (
                     self._validate_unevaluated_properties(
                         data, schema["unevaluatedProperties"]
+                    )
+                    and retval
+                )
+            if isinstance(data, list) and "unevaluatedItems" in schema:
+                retval = (
+                    self._validate_unevaluated_items(
+                        data, schema["unevaluatedItems"]
                     )
                     and retval
                 )

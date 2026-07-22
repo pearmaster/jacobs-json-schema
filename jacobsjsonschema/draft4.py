@@ -513,11 +513,12 @@ class Validator(object):
         retval = True
         for idx, item in enumerate(data):
             retval = self.validate(item, schema[idx]) and retval
+            self._merge_last_frame()
             self._record_evaluated_item(idx)
         return retval
 
     def _validate_items(
-        self, data: list, schema: Union[list, dict], additionalItems=True
+        self, data: list, schema: Union[list, dict], additionalItems=None
     ) -> bool:
         retval = True
         if isinstance(schema, list):
@@ -526,13 +527,18 @@ class Validator(object):
             if data_len <= schema_len:
                 return self._validate_prefixitems(data[:schema_len], schema)
             else:
-                if additionalItems:
+                if additionalItems is not False:
                     retval = self._validate_prefixitems(data[:schema_len], schema)
-                    for item in data[schema_len:]:
-                        retval = (
-                            (additionalItems is True)
-                            or self.validate(item, additionalItems)
-                        ) and retval
+                    for idx, item in enumerate(data[schema_len:], start=schema_len):
+                        if additionalItems is True:
+                            # Explicit additionalItems: true — mark as evaluated
+                            self._record_evaluated_item(idx)
+                        elif additionalItems is not None:
+                            # additionalItems is a schema — validate & mark
+                            retval = self.validate(item, additionalItems) and retval
+                            self._record_evaluated_item(idx)
+                        # else: additionalItems not present (None) —
+                        # items pass validation but are NOT recorded as evaluated
                     return retval
                 else:
                     return self._report_validation_error(
@@ -540,8 +546,9 @@ class Validator(object):
                         data,
                         schema,
                     )
-        for item in data:
+        for idx, item in enumerate(data):
             retval = self.validate(item, schema) and retval
+            self._record_evaluated_item(idx)
         return retval
 
     def _validate_maxitems(self, data: list, maximum: int) -> bool:
@@ -598,7 +605,7 @@ class Validator(object):
     def _array_validate(self, data: list, schema: dict) -> bool:
         retval = True
         additionalItems = (
-            schema["additionalItems"] if "additionalItems" in schema else True
+            schema["additionalItems"] if "additionalItems" in schema else None
         )
         if "items" in schema:
             retval = self._validate_items(data, schema["items"], additionalItems)
