@@ -1,4 +1,4 @@
-from typing import Union, List, Dict, Optional, Callable, Set
+from typing import Union, List, Dict, Optional, Callable, Set, Any
 
 import re
 
@@ -55,6 +55,18 @@ class Validator(object):
         self._errors: List[str] = []
         self._annotation_stack: List[AnnotationFrame] = []
         self._last_frame: Optional[AnnotationFrame] = None
+        # Dynamic-scope stack for $dynamicRef/$recursiveRef resolution.
+        # The validator pushes each schema resource's base URI as it enters
+        # it during validation, giving the doc-loader's resolve_in_scope()
+        # method the runtime scope chain it needs.
+        self._dynamic_scope: List[str] = []
+        # When True, a resolved $ref is validated *alongside* its sibling
+        # keywords (2019-09+ behavior).  When False (draft4/6/7), the
+        # resolved $ref replaces the entire schema node.
+        self._reference_applies_siblings: bool = False
+        # Reference keywords this dialect recognises.  Subclasses extend
+        # this set (e.g. draft2019-09 adds "$recursiveRef").
+        self._ref_keywords: Set[str] = {"$ref"}
 
     @staticmethod
     def get_dollar_id_token() -> str:
@@ -672,19 +684,67 @@ class Validator(object):
                 retval = validator_func(data, schema[k]) and retval  # type: ignore[operator]
         return retval
 
+    def _resolve_ref_target(self, schema: Any) -> tuple:
+        """Resolve a reference if present in *schema*.
+
+        Returns ``(target, is_ref)`` where *target* is the resolved schema
+        node (or ``None`` for raw-string ``$ref`` that needs
+        ``validate_from_reference``) and *is_ref* is ``True`` when a
+        reference keyword was found.
+
+        Handles three shapes:
+
+        1. Bare ``DocReference`` (collapsed form from
+           ``USE_REFERENCES_OBJECTS`` mode) — ``schema`` itself has a
+           ``_reference`` attribute.
+        2. Dict whose value for a ref keyword is a ``DocReference`` or
+           ``DocDynamicReference`` (the ``KEEP_REFERENCES`` shape).
+        3. Raw string ``$ref`` value (legacy / standalone paths).
+        """
+        # 1. Bare DocReference (collapsed form)
+        if hasattr(schema, "_reference"):
+            return schema.resolve(), True  # type: ignore[attr-defined]
+
+        # 2. Dict with ref keywords (KEEP_REFERENCES shape)
+        if isinstance(schema, dict):
+            for ref_kw in self._ref_keywords:
+                if ref_kw in schema:
+                    ref_val = schema[ref_kw]
+                    # DocDynamicReference — use runtime dynamic scope
+                    if hasattr(ref_val, "resolve_in_scope"):
+                        return (
+                            ref_val.resolve_in_scope(self._dynamic_scope),  # type: ignore[attr-defined]
+                            True,
+                        )
+                    # DocReference
+                    if hasattr(ref_val, "resolve"):
+                        return ref_val.resolve(), True  # type: ignore[attr-defined]
+                    # Raw string $ref (legacy)
+                    if isinstance(ref_val, str):
+                        return None, True
+
+        return None, False
+
     def _validate(self, data: JsonTypes, schema: dict) -> bool:
         retval = True
-        if hasattr(schema, "_reference"):
-            resolved_schema = schema.resolve()  # type: ignore[attr-defined]
+        target, is_ref = self._resolve_ref_target(schema)
+        if is_ref:
             self._last_frame = None
-            result = self.validate(data, resolved_schema)
+            if target is not None:
+                result = self.validate(data, target)
+            else:
+                # Raw string $ref — use legacy path
+                result = self.validate_from_reference(data, schema["$ref"])  # type: ignore[index]
             self._merge_last_frame()
-            return result and retval
-        elif "$ref" in schema:
-            self._last_frame = None
-            result = self.validate_from_reference(data, schema["$ref"])
-            self._merge_last_frame()
-            return result and retval
+            # Bare DocReference (collapsed form) — no siblings to validate,
+            # always return.  Only dict schemas with a $ref *key* (the
+            # KEEP_REFERENCES shape) can have sibling keywords.
+            if not isinstance(schema, dict) or not self._reference_applies_siblings:
+                return result and retval
+            retval = result and retval
+            # Fall through to validate sibling keywords alongside the ref.
+            # The $ref* keys themselves won't match any validator dict entry
+            # and are harmlessly skipped.
         for k, validator_func in self.generic_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval  # type: ignore[operator]
@@ -701,8 +761,18 @@ class Validator(object):
             schema = self._root_schema
         frame = AnnotationFrame()
         self._annotation_stack.append(frame)
+        # Push the schema's base URI onto the dynamic scope if it differs
+        # from the current top (i.e. we've entered a new resource).
+        pushed_dynamic = False
+        if hasattr(schema, "base_uri") and hasattr(schema.base_uri, "uri"):
+            uri = schema.base_uri.uri  # type: ignore[attr-defined]
+            if not self._dynamic_scope or self._dynamic_scope[-1] != uri:
+                self._dynamic_scope.append(uri)
+                pushed_dynamic = True
         try:
             return self._validate(data, schema)
         finally:
             self._annotation_stack.pop()
             self._last_frame = frame
+            if pushed_dynamic:
+                self._dynamic_scope.pop()
