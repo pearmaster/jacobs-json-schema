@@ -2,8 +2,29 @@ from typing import Union, List, Dict, Optional, Callable, Set, Any
 
 import re
 
+try:
+    import regex as _regex  # type: ignore[import-untyped]
+except ImportError:  # pragma: no cover
+    _regex = None  # type: ignore[assignment]
+
 from .bool_compare_util import replace_bools_for_comparison
 from .json_types import JsonTypes, AnnotationFrame
+
+
+def _pattern_search(pattern: str, string: str):
+    """Search *string* for *pattern*.
+
+    JSON Schema patterns are ECMA-262 regexes, which permit constructs such as
+    ``\\p{Letter}`` (unicode property escapes) that Python's ``re`` cannot
+    compile.  Fall back to the ``regex`` module (installed as a dependency) for
+    those cases; ``re`` handles everything else.
+    """
+    try:
+        return re.search(pattern, string)
+    except re.error:
+        if _regex is not None:
+            return _regex.search(pattern, string)
+        raise
 
 
 class JsonSchemaValidationError(Exception):
@@ -222,9 +243,8 @@ class Validator(object):
             raise InvalidSchemaError("patternProperties must be an object")
         retval = True
         for regex_expression, subschema in schema.items():
-            pattern = re.compile(regex_expression)
             for k, v in data.items():
-                if pattern.search(k):
+                if _pattern_search(regex_expression, k):
                     retval = retval and self.validate(v, subschema)
                     self._record_evaluated_property(k)
         return retval
@@ -250,7 +270,7 @@ class Validator(object):
                     found_somewhere = True
                 if property_patterns is not None:
                     for regex_expression in property_patterns:
-                        if re.search(regex_expression, propname):
+                        if _pattern_search(regex_expression, propname):
                             found_somewhere = True
                 if not found_somewhere:
                     self._record_evaluated_property(propname)
@@ -460,7 +480,7 @@ class Validator(object):
     def _validate_pattern(self, data: str, pattern: str) -> bool:
         if not isinstance(data, str):
             return True
-        if not re.search(pattern, data):
+        if not _pattern_search(pattern, data):
             return self._report_validation_error(
                 "The string '{}' did not match the pattern '{}'".format(data, pattern),
                 data,

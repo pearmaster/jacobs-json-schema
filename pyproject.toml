@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "jacobs-json-schema"
-version = "0.5.1"
+version = "0.6.0"
 description = "Another JSON-Schema Validator"
 readme = "README.md"
 license = "MIT"
@@ -13,6 +13,9 @@ authors = [
     { name = "Jacob Brunson", email = "pypi@jacobbrunson.com" },
 ]
 keywords = ["json schema", "validation", "data validation", "json"]
+dependencies = [
+    "regex",
+]
 classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -47,6 +50,6 @@ dev = [
     "mypy",
     "pytest",
     "ruff",
-    "jacobs-json-doc~=0.17.0; python_version >= '3.12'",
+    "jacobs-json-doc~=0.18.0; python_version >= '3.12'",
     "requests",
 ]
