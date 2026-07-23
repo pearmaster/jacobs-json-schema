@@ -1,8 +1,12 @@
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Set
 
 from .json_types import JsonTypes, AnnotationFrame
 from .draft4 import InvalidSchemaError, JsonSchemaValidationError
 from .draft7 import Validator as Draft7Validator
+from .vocabularies import (
+    DRAFT2019_09_VOCABULARIES,
+    compute_active_keywords,
+)
 
 
 class Validator(Draft7Validator):
@@ -19,7 +23,69 @@ class Validator(Draft7Validator):
             }
         )
 
+        # 2019-09+ applies $ref alongside sibling keywords, not instead of them.
+        self._reference_applies_siblings = True
+        # Recognise $recursiveRef as a reference keyword.
+        self._ref_keywords = {"$ref", "$recursiveRef"}
+
+        # --- Vocabulary-aware keyword filtering ---
+        self._active_keywords: Optional[Set[str]] = None
+        self._init_vocabulary_filter()
+
         self._warnings: List[str] = []
+
+    def _init_vocabulary_filter(self) -> None:
+        """Compute the active-keyword set from the root schema's ``$vocabulary``.
+
+        If the root schema has no ``$schema``, or the metaschema is unreachable,
+        or no filtering is needed, ``self._active_keywords`` stays ``None`` (fast
+        path — all keywords active).
+        """
+        schema = self._root_schema
+        # Only applies to DocObject instances (integrated mode with jacobs-json-doc)
+        if not hasattr(schema, "get") or not hasattr(schema, "_pointers"):
+            return
+        metaschema_uri = schema.get("$schema")  # type: ignore[union-attr]
+        if not metaschema_uri:
+            return
+        try:
+            controller = schema._pointers.controller  # type: ignore[union-attr]
+            metaschema = controller.get_document(str(metaschema_uri))
+            vocabulary = metaschema.get("$vocabulary") if hasattr(metaschema, "get") else None
+        except Exception:
+            return
+        self._active_keywords = compute_active_keywords(
+            vocabulary, self._vocabularies_map()
+        )
+        if self._active_keywords is not None:
+            self._prune_dispatch_dicts()
+
+    def _vocabularies_map(self) -> dict:
+        """Return the vocabulary-URI → keyword-set mapping for this draft."""
+        return DRAFT2019_09_VOCABULARIES
+
+    def _reinit_vocabulary_filter(self) -> None:
+        """Re-run vocabulary filtering (used by subclasses with a different vocab map)."""
+        self._active_keywords = None
+        self._init_vocabulary_filter()
+
+    def _prune_dispatch_dicts(self) -> None:
+        """Remove keywords from dispatch dicts that aren't in the active set."""
+        assert self._active_keywords is not None
+        active = self._active_keywords
+        for d in (
+            self.generic_validators,
+            self.value_validators,
+            self.array_validators,
+            self.object_validators,
+        ):
+            for kw in list(d.keys()):
+                if kw not in active:
+                    del d[kw]
+
+    def _keyword_active(self, keyword: str) -> bool:
+        """Return ``True`` if *keyword* is active per the vocabulary filter."""
+        return self._active_keywords is None or keyword in self._active_keywords
 
     def get_warnings(self):
         return self._warnings
