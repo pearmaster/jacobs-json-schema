@@ -17,6 +17,26 @@ tasks:
     desc: Run all tests
     cmd: uv run pytest
 
+  test:draft4:
+    desc: Run draft 4 integrated test suite
+    cmd: uv run pytest tests/integrated/test_suite_4_docs.py
+
+  test:draft6:
+    desc: Run draft 6 integrated test suite
+    cmd: uv run pytest tests/integrated/test_suite_6_docs.py
+
+  test:draft7:
+    desc: Run draft 7 integrated test suite
+    cmd: uv run pytest tests/integrated/test_suite_7_docs.py
+
+  test:draft2019-09:
+    desc: Run draft 2019-09 integrated test suite
+    cmd: uv run pytest tests/integrated/test_suite_2019_09_docs.py
+
+  test:draft2020-12:
+    desc: Run draft 2020-12 integrated test suite
+    cmd: uv run pytest tests/integrated/test_suite_2020_12_docs.py
+
   all:
     desc: Run all checks and tests
     cmds:

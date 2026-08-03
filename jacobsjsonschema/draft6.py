@@ -6,7 +6,7 @@ from .draft4 import (
     JsonSchemaValidationError,
     InvalidSchemaError,
 )
-from .json_types import JsonTypes
+from .json_types import JsonTypes, AnnotationFrame
 
 
 class Validator(Draft4Validator):
@@ -187,6 +187,7 @@ class Validator(Draft4Validator):
                     retval = self._validate_required(data, consequence) and retval
                 elif isinstance(consequence, dict):
                     retval = self.validate(data, consequence) and retval
+                    self._merge_last_frame()
                 else:
                     return InvalidSchemaError(
                         "Dependency must be either a list or a schema"
@@ -205,4 +206,20 @@ class Validator(Draft4Validator):
     def validate(self, data: JsonTypes, schema: Union[dict, bool, None] = None) -> bool:
         if schema is None:
             schema = self._root_schema
-        return self._validate(data, schema)
+        frame = AnnotationFrame()
+        self._annotation_stack.append(frame)
+        # Push the schema's base URI onto the dynamic scope if it differs
+        # from the current top (i.e. we've entered a new resource).
+        pushed_dynamic = False
+        if hasattr(schema, "base_uri") and hasattr(schema.base_uri, "uri"):
+            uri = schema.base_uri.uri  # type: ignore[attr-defined]
+            if not self._dynamic_scope or self._dynamic_scope[-1] != uri:
+                self._dynamic_scope.append(uri)
+                pushed_dynamic = True
+        try:
+            return self._validate(data, schema)
+        finally:
+            self._annotation_stack.pop()
+            self._last_frame = frame
+            if pushed_dynamic:
+                self._dynamic_scope.pop()

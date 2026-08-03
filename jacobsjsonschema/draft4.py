@@ -1,9 +1,30 @@
-from typing import Union, List, Dict, Optional, Callable
+from typing import Union, List, Dict, Optional, Callable, Set, Any
 
 import re
 
+try:
+    import regex as _regex  # type: ignore[import-untyped]
+except ImportError:  # pragma: no cover
+    _regex = None  # type: ignore[assignment]
+
 from .bool_compare_util import replace_bools_for_comparison
-from .json_types import JsonTypes
+from .json_types import JsonTypes, AnnotationFrame
+
+
+def _pattern_search(pattern: str, string: str):
+    """Search *string* for *pattern*.
+
+    JSON Schema patterns are ECMA-262 regexes, which permit constructs such as
+    ``\\p{Letter}`` (unicode property escapes) that Python's ``re`` cannot
+    compile.  Fall back to the ``regex`` module (installed as a dependency) for
+    those cases; ``re`` handles everything else.
+    """
+    try:
+        return re.search(pattern, string)
+    except re.error:
+        if _regex is not None:
+            return _regex.search(pattern, string)
+        raise
 
 
 class JsonSchemaValidationError(Exception):
@@ -53,6 +74,20 @@ class Validator(object):
         self._temp_ignore_errors = False
         self._lazy_error_reporting = lazy_error_reporting
         self._errors: List[str] = []
+        self._annotation_stack: List[AnnotationFrame] = []
+        self._last_frame: Optional[AnnotationFrame] = None
+        # Dynamic-scope stack for $dynamicRef/$recursiveRef resolution.
+        # The validator pushes each schema resource's base URI as it enters
+        # it during validation, giving the doc-loader's resolve_in_scope()
+        # method the runtime scope chain it needs.
+        self._dynamic_scope: List[str] = []
+        # When True, a resolved $ref is validated *alongside* its sibling
+        # keywords (2019-09+ behavior).  When False (draft4/6/7), the
+        # resolved $ref replaces the entire schema node.
+        self._reference_applies_siblings: bool = False
+        # Reference keywords this dialect recognises.  Subclasses extend
+        # this set (e.g. draft2019-09 adds "$recursiveRef").
+        self._ref_keywords: Set[str] = {"$ref"}
 
     @staticmethod
     def get_dollar_id_token() -> str:
@@ -60,6 +95,32 @@ class Validator(object):
 
     def get_errors(self) -> List[str]:
         return self._errors
+
+    def _record_evaluated_property(self, key: str) -> None:
+        """Record that a property key was evaluated by the current schema."""
+        if self._annotation_stack:
+            self._annotation_stack[-1].evaluated_property_keys.add(key)
+
+    def _record_evaluated_item(self, index: int) -> None:
+        """Record that an array item index was evaluated by the current schema."""
+        if self._annotation_stack:
+            self._annotation_stack[-1].evaluated_item_indices.add(index)
+
+    def _merge_last_frame(self) -> None:
+        """Merge the last completed frame into the current top-of-stack frame.
+
+        Used by applicators (allOf, anyOf, etc.) to propagate annotations
+        from child schemas into the parent schema's frame.
+        """
+        if self._last_frame is not None and self._annotation_stack:
+            current = self._annotation_stack[-1]
+            current.evaluated_property_keys.update(
+                self._last_frame.evaluated_property_keys
+            )
+            current.evaluated_item_indices.update(
+                self._last_frame.evaluated_item_indices
+            )
+        self._last_frame = None
 
     def add_format(
         self, name: str, validator_func: Callable[[Union[str, int, float]], bool]
@@ -168,6 +229,7 @@ class Validator(object):
         for k, v in data.items():
             if k in schema:
                 retval = self.validate(v, schema[k]) and retval
+                self._record_evaluated_property(k)
         return retval
 
     def _validate_pattern_properties(
@@ -181,10 +243,10 @@ class Validator(object):
             raise InvalidSchemaError("patternProperties must be an object")
         retval = True
         for regex_expression, subschema in schema.items():
-            pattern = re.compile(regex_expression)
             for k, v in data.items():
-                if pattern.search(k):
+                if _pattern_search(regex_expression, k):
                     retval = retval and self.validate(v, subschema)
+                    self._record_evaluated_property(k)
         return retval
 
     def _validate_additional_properties(
@@ -208,9 +270,10 @@ class Validator(object):
                     found_somewhere = True
                 if property_patterns is not None:
                     for regex_expression in property_patterns:
-                        if re.search(regex_expression, propname):
+                        if _pattern_search(regex_expression, propname):
                             found_somewhere = True
                 if not found_somewhere:
+                    self._record_evaluated_property(propname)
                     if additional is not False and self.validate(
                         data[propname], additional  # type: ignore[arg-type]
                     ):
@@ -363,32 +426,10 @@ class Validator(object):
     def _validate_enum(self, data: JsonTypes, schema: List[JsonTypes]) -> bool:
         if not isinstance(schema, list):
             raise InvalidSchemaError("The enum restriction must be a list of values")
-        if isinstance(data, bool):
-            if data:
-                for x in schema:
-                    if x is True:
-                        return True
-            else:
-                for x in schema:
-                    if x is False:
-                        return True
-        elif isinstance(data, float):
-            for x in schema:
-                if (
-                    (isinstance(x, int) or isinstance(x, float))
-                    and not isinstance(x, bool)
-                ) and data == float(x):
-                    return True
-        elif isinstance(data, int):
-            for x in schema:
-                if (
-                    isinstance(x, float)
-                    or isinstance(x, int)
-                    and not isinstance(x, bool)
-                ) and data == int(x):
-                    return True
-        elif data in schema:
-            return True
+        fixed_data = replace_bools_for_comparison(data)
+        for x in schema:
+            if fixed_data == replace_bools_for_comparison(x):
+                return True
 
         return self._report_validation_error(
             "The value '{}' was not in the enumerated list of allowed values".format(
@@ -399,8 +440,12 @@ class Validator(object):
         )
 
     def _validate_minlength(self, data: str, length: int) -> bool:
-        if not isinstance(length, int):
+        if isinstance(length, bool) or not isinstance(length, (int, float)):
             raise InvalidSchemaError("The minLength value must be an integer")
+        if isinstance(length, float):
+            if not length.is_integer():
+                raise InvalidSchemaError("The minLength value must be an integer")
+            length = int(length)
         if not isinstance(data, str):
             # minLength ignores non-strings per spec
             return True
@@ -415,8 +460,12 @@ class Validator(object):
         return True
 
     def _validate_maxlength(self, data: str, length: int) -> bool:
-        if not isinstance(length, int):
+        if isinstance(length, bool) or not isinstance(length, (int, float)):
             raise InvalidSchemaError("The maxLength value must be an integer")
+        if isinstance(length, float):
+            if not length.is_integer():
+                raise InvalidSchemaError("The maxLength value must be an integer")
+            length = int(length)
         if not isinstance(data, str):
             # MaxLength ignores non-strings per spec
             return True
@@ -431,7 +480,7 @@ class Validator(object):
     def _validate_pattern(self, data: str, pattern: str) -> bool:
         if not isinstance(data, str):
             return True
-        if not re.search(pattern, data):
+        if not _pattern_search(pattern, data):
             return self._report_validation_error(
                 "The string '{}' did not match the pattern '{}'".format(data, pattern),
                 data,
@@ -496,10 +545,15 @@ class Validator(object):
         retval = True
         for idx, item in enumerate(data):
             retval = self.validate(item, schema[idx]) and retval
+            # Do NOT merge the child frame here: each item is a distinct
+            # instance location, so its annotations (evaluated properties/
+            # items of the child) must not propagate into this schema's
+            # frame.  Only record that this index was evaluated.
+            self._record_evaluated_item(idx)
         return retval
 
     def _validate_items(
-        self, data: list, schema: Union[list, dict], additionalItems=True
+        self, data: list, schema: Union[list, dict], additionalItems=None
     ) -> bool:
         retval = True
         if isinstance(schema, list):
@@ -508,13 +562,18 @@ class Validator(object):
             if data_len <= schema_len:
                 return self._validate_prefixitems(data[:schema_len], schema)
             else:
-                if additionalItems:
+                if additionalItems is not False:
                     retval = self._validate_prefixitems(data[:schema_len], schema)
-                    for item in data[schema_len:]:
-                        retval = (
-                            (additionalItems is True)
-                            or self.validate(item, additionalItems)
-                        ) and retval
+                    for idx, item in enumerate(data[schema_len:], start=schema_len):
+                        if additionalItems is True:
+                            # Explicit additionalItems: true — mark as evaluated
+                            self._record_evaluated_item(idx)
+                        elif additionalItems is not None:
+                            # additionalItems is a schema — validate & mark
+                            retval = self.validate(item, additionalItems) and retval
+                            self._record_evaluated_item(idx)
+                        # else: additionalItems not present (None) —
+                        # items pass validation but are NOT recorded as evaluated
                     return retval
                 else:
                     return self._report_validation_error(
@@ -522,8 +581,9 @@ class Validator(object):
                         data,
                         schema,
                     )
-        for item in data:
+        for idx, item in enumerate(data):
             retval = self.validate(item, schema) and retval
+            self._record_evaluated_item(idx)
         return retval
 
     def _validate_maxitems(self, data: list, maximum: int) -> bool:
@@ -580,7 +640,7 @@ class Validator(object):
     def _array_validate(self, data: list, schema: dict) -> bool:
         retval = True
         additionalItems = (
-            schema["additionalItems"] if "additionalItems" in schema else True
+            schema["additionalItems"] if "additionalItems" in schema else None
         )
         if "items" in schema:
             retval = self._validate_items(data, schema["items"], additionalItems)
@@ -644,13 +704,67 @@ class Validator(object):
                 retval = validator_func(data, schema[k]) and retval  # type: ignore[operator]
         return retval
 
+    def _resolve_ref_target(self, schema: Any) -> tuple:
+        """Resolve a reference if present in *schema*.
+
+        Returns ``(target, is_ref)`` where *target* is the resolved schema
+        node (or ``None`` for raw-string ``$ref`` that needs
+        ``validate_from_reference``) and *is_ref* is ``True`` when a
+        reference keyword was found.
+
+        Handles three shapes:
+
+        1. Bare ``DocReference`` (collapsed form from
+           ``USE_REFERENCES_OBJECTS`` mode) — ``schema`` itself has a
+           ``_reference`` attribute.
+        2. Dict whose value for a ref keyword is a ``DocReference`` or
+           ``DocDynamicReference`` (the ``KEEP_REFERENCES`` shape).
+        3. Raw string ``$ref`` value (legacy / standalone paths).
+        """
+        # 1. Bare DocReference (collapsed form)
+        if hasattr(schema, "_reference"):
+            return schema.resolve(), True  # type: ignore[attr-defined]
+
+        # 2. Dict with ref keywords (KEEP_REFERENCES shape)
+        if isinstance(schema, dict):
+            for ref_kw in self._ref_keywords:
+                if ref_kw in schema:
+                    ref_val = schema[ref_kw]
+                    # DocDynamicReference — use runtime dynamic scope
+                    if hasattr(ref_val, "resolve_in_scope"):
+                        return (
+                            ref_val.resolve_in_scope(self._dynamic_scope),  # type: ignore[attr-defined]
+                            True,
+                        )
+                    # DocReference
+                    if hasattr(ref_val, "resolve"):
+                        return ref_val.resolve(), True  # type: ignore[attr-defined]
+                    # Raw string $ref (legacy)
+                    if isinstance(ref_val, str):
+                        return None, True
+
+        return None, False
+
     def _validate(self, data: JsonTypes, schema: dict) -> bool:
         retval = True
-        if hasattr(schema, "_reference"):
-            resolved_schema = schema.resolve()  # type: ignore[attr-defined]
-            return self.validate(data, resolved_schema) and retval
-        elif "$ref" in schema:
-            return self.validate_from_reference(data, schema["$ref"]) and retval
+        target, is_ref = self._resolve_ref_target(schema)
+        if is_ref:
+            self._last_frame = None
+            if target is not None:
+                result = self.validate(data, target)
+            else:
+                # Raw string $ref — use legacy path
+                result = self.validate_from_reference(data, schema["$ref"])  # type: ignore[index]
+            self._merge_last_frame()
+            # Bare DocReference (collapsed form) — no siblings to validate,
+            # always return.  Only dict schemas with a $ref *key* (the
+            # KEEP_REFERENCES shape) can have sibling keywords.
+            if not isinstance(schema, dict) or not self._reference_applies_siblings:
+                return result and retval
+            retval = result and retval
+            # Fall through to validate sibling keywords alongside the ref.
+            # The $ref* keys themselves won't match any validator dict entry
+            # and are harmlessly skipped.
         for k, validator_func in self.generic_validators.items():
             if k in schema:
                 retval = validator_func(data, schema[k]) and retval  # type: ignore[operator]
@@ -665,4 +779,20 @@ class Validator(object):
     def validate(self, data: JsonTypes, schema: Optional[dict] = None) -> bool:
         if schema is None:
             schema = self._root_schema
-        return self._validate(data, schema)
+        frame = AnnotationFrame()
+        self._annotation_stack.append(frame)
+        # Push the schema's base URI onto the dynamic scope if it differs
+        # from the current top (i.e. we've entered a new resource).
+        pushed_dynamic = False
+        if hasattr(schema, "base_uri") and hasattr(schema.base_uri, "uri"):
+            uri = schema.base_uri.uri  # type: ignore[attr-defined]
+            if not self._dynamic_scope or self._dynamic_scope[-1] != uri:
+                self._dynamic_scope.append(uri)
+                pushed_dynamic = True
+        try:
+            return self._validate(data, schema)
+        finally:
+            self._annotation_stack.pop()
+            self._last_frame = frame
+            if pushed_dynamic:
+                self._dynamic_scope.pop()
