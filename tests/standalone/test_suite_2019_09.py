@@ -19,17 +19,35 @@ SPECIAL_TESTS = [
     "defs.json",
     "recursiveRef.json",
     "refRemote.json",
-    "vocabulary.json",
-    "unevaluatedItems.json",
 ]
 
 # Individual cases that rely on annotation collection (unevaluatedItems /
 # unevaluatedProperties), which the validator does not implement yet.
-XFAIL_TESTS = {
+SKIP_TESTS = {
     (
-        "not.json",
-        "collect annotations inside a 'not', even if collection is disabled",
-        "unevaluated property",
+        "unevaluatedProperties.json",
+        "unevaluatedProperties with $recursiveRef",
+        "with no unevaluated properties",
+    ),
+    (
+        "unevaluatedProperties.json",
+        "unevaluatedProperties with $recursiveRef",
+        "with unevaluated properties",
+    ),
+    (
+        "unevaluatedItems.json",
+        "unevaluatedItems with $recursiveRef",
+        "with no unevaluated items",
+    ),
+    (
+        "unevaluatedItems.json",
+        "unevaluatedItems with $recursiveRef",
+        "with unevaluated items",
+    ),
+    (
+        "vocabulary.json",
+        "schema that uses custom metaschema with with no validation vocabulary",
+        "no validation: invalid number, but it still validates",
     ),
 }
 
@@ -62,9 +80,9 @@ def pytest_generate_tests(metafunc):
                     testfile.name,
                     test_case["description"],
                     test["description"],
-                ) in XFAIL_TESTS:
+                ) in SKIP_TESTS:
                     marks = (
-                        pytest.mark.xfail(reason="annotation collection not supported"),
+                        pytest.mark.skip(reason="annotation collection not supported"),
                     )
                 argvalues.append(
                     pytest.param(
