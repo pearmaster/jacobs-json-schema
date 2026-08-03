@@ -1,6 +1,5 @@
 # jacobs-json-schema
 
-[![CI](https://github.com/pearmaster/jacobs-json-schema/actions/workflows/ci.yml/badge.svg)](https://github.com/pearmaster/jacobs-json-schema/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/pearmaster/jacobs-json-schema/badge.svg?branch=main)](https://coveralls.io/github/pearmaster/jacobs-json-schema?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/jacobs-json-schema/badge/?version=latest)](https://jacobs-json-schema.readthedocs.io/en/latest/?badge=latest)
 
